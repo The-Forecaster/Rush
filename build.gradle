@@ -1,0 +1,67 @@
+plugins {
+    id 'fabric-loom' version '0.11-SNAPSHOT'
+    id 'org.jetbrains.kotlin.jvm' version '1.6.10'
+}
+
+sourceCompatibility = targetCompatibility = project.java_version as int
+
+archivesBaseName = project.mod_name
+version = project.mod_version
+group = project.mod_group
+
+java {
+    withSourcesJar()
+}
+
+loom {
+    accessWidenerPath = file("src/main/resources/transrights.accesswidener")
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.release.set(17)
+    it.options.encoding = "UTF-8"
+}
+
+compileKotlin {
+    kotlinOptions {
+        jvmTarget = project.java_version as String
+    }
+}
+
+processResources {
+    inputs.property "version", project.version
+
+    filesMatching("fabric.mod.json") {
+        expand "version": project.mod_version
+    }
+}
+
+dependencies {
+    Set<String> apiModules = []
+
+    // fabric dependencies
+    minecraft "com.mojang:minecraft:$project.minecraft_version"
+    mappings "net.fabricmc:yarn:$project.minecraft_version+$project.yarn_mappings:v2"
+    modImplementation "net.fabricmc:fabric-loader:0.13.3"
+
+    // api dependencies
+    apiModules.forEach {
+        include modImplementation(fabricApi.module(it, "0.48.0+$project.minecraft_version"))
+    }
+
+    // TR dependencies
+    include(modImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0")) {
+        exclude module: 'kotlin-stdlib-jdk8'
+        exclude module: 'kotlin-stdlib-common'
+    }
+}
+
+jar {
+    from("LICENSE") {
+        rename { "${it}_${project.archivesBaseName}" }
+    }
+
+    manifest {
+        attributes("Main-Class": "trans.rights.client.Main")
+    }
+}

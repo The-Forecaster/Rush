@@ -1,0 +1,22 @@
+accessWidener	v1	named
+
+accessible field net/minecraft/network/packet/s2c/play/PlayerAbilitiesS2CPacket flying Z
+mutable    field net/minecraft/network/packet/s2c/play/PlayerAbilitiesS2CPacket flying Z
+accessible field net/minecraft/network/packet/s2c/play/PlayerAbilitiesS2CPacket allowFlying Z
+mutable    field net/minecraft/network/packet/s2c/play/PlayerAbilitiesS2CPacket allowFlying Z
+accessible field net/minecraft/network/packet/s2c/play/PlayerAbilitiesS2CPacket flySpeed F
+mutable    field net/minecraft/network/packet/s2c/play/PlayerAbilitiesS2CPacket flySpeed F
+
+accessible field net/minecraft/network/packet/c2s/play/PlayerMoveC2SPacket x D
+mutable    field net/minecraft/network/packet/c2s/play/PlayerMoveC2SPacket x D
+accessible field net/minecraft/network/packet/c2s/play/PlayerMoveC2SPacket y D
+mutable    field net/minecraft/network/packet/c2s/play/PlayerMoveC2SPacket y D
+accessible field net/minecraft/network/packet/c2s/play/PlayerMoveC2SPacket z D
+mutable    field net/minecraft/network/packet/c2s/play/PlayerMoveC2SPacket z D
+accessible field net/minecraft/network/packet/c2s/play/PlayerMoveC2SPacket onGround Z
+mutable    field net/minecraft/network/packet/c2s/play/PlayerMoveC2SPacket onGround Z
+
+accessible field net/minecraft/network/packet/c2s/play/UpdatePlayerAbilitiesC2SPacket flying Z
+mutable    field net/minecraft/network/packet/c2s/play/UpdatePlayerAbilitiesC2SPacket flying Z
+
+
