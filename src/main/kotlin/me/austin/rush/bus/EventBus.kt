@@ -1,11 +1,15 @@
 package me.austin.rush.bus
 
+import me.austin.rush.listener.Listener
+
 /**
  * Basic structure for an event dispatcher
  *
  * @author Austin
  */
 interface EventBus {
+    val registry: Map<Class<*>, MutableSet<Listener<*>>>
+
     /**
      * Adds the Subscriber to the registry
      *

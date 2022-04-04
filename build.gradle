@@ -6,6 +6,10 @@ plugins {
 archivesBaseName = "Rush"
 group 'me.austin.rush'
 
+repositories {
+    mavenCentral()
+}
+
 java {
     withSourcesJar()
 }

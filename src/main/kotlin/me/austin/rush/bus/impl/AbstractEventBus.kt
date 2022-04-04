@@ -10,7 +10,7 @@ import java.util.concurrent.CopyOnWriteArraySet
 abstract class AbstractEventBus(
     private val type: ListenerType,
     private val subscribers: MutableSet<Any> = Collections.synchronizedSet(mutableSetOf()),
-    protected val registry: ConcurrentHashMap<Class<*>, MutableSet<Listener<*>>> = ConcurrentHashMap()
+    override val registry: ConcurrentHashMap<Class<*>, MutableSet<Listener<*>>> = ConcurrentHashMap()
 ) : EventBus {
     /**
      * Finds and registers all valid listener fields in a target object class. Will then sort them
@@ -36,10 +36,6 @@ abstract class AbstractEventBus(
         when (this.type) {
             LAMBDA -> this.registerFields(subscriber)
             METHOD -> this.registerMethods(subscriber)
-            else -> {
-                this.registerFields(subscriber)
-                this.registerMethods(subscriber)
-            }
         }
 
         this.subscribers.add(subscriber)
@@ -51,10 +47,6 @@ abstract class AbstractEventBus(
         when (this.type) {
             LAMBDA -> this.unregisterFields(subscriber)
             METHOD -> this.unregisterMethods(subscriber)
-            else -> {
-                this.registerFields(subscriber)
-                this.registerMethods(subscriber)
-            }
         }
 
         this.subscribers.remove(subscriber)
@@ -81,6 +73,5 @@ abstract class AbstractEventBus(
 
 enum class ListenerType {
     METHOD,
-    LAMBDA,
-    BOTH
+    LAMBDA
 }
