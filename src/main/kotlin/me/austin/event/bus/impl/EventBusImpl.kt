@@ -1,18 +1,15 @@
-package trans.rights.event.bus.impl
+package me.austin.event.bus.impl
 
-import trans.rights.event.annotation.EventHandler
-import trans.rights.event.bus.AbstractEventBus
-import trans.rights.event.bus.ListenerType
-import trans.rights.event.listener.Listener
-import trans.rights.event.listener.impl.LambdaListener
-import trans.rights.event.listener.impl.MethodListener
-import trans.rights.event.type.ICancellable
+import me.austin.event.annotation.EventHandler
+import me.austin.event.bus.AbstractEventBus
+import me.austin.event.bus.ListenerType
+import me.austin.event.listener.Listener
+import me.austin.event.listener.impl.LambdaListener
+import me.austin.event.listener.impl.MethodListener
 import java.lang.reflect.Field
 import java.lang.reflect.Method
 import java.util.*
 import java.util.concurrent.CopyOnWriteArraySet
-
-object BasicEventManager : EventManager(ListenerType.LAMBDA)
 
 open class EventManager(type: ListenerType) : AbstractEventBus(type) {
     override fun registerFields(subscriber: Any) {

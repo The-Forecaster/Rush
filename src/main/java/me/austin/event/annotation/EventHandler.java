@@ -1,10 +1,9 @@
-package trans.rights.event.annotation;
+package me.austin.event.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.annotation.
 
 /**
  * Used to mark something to be added to the subscriber registry
@@ -18,6 +17,7 @@ import java.lang.annotation.
  * @author Austin
  * @see Priority
  */
+
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.METHOD, ElementType.FIELD})
 public @interface EventHandler {

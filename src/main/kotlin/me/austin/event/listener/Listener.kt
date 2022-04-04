@@ -1,4 +1,4 @@
-package trans.rights.event.listener
+package me.austin.event.listener
 
 import kotlin.math.max
 

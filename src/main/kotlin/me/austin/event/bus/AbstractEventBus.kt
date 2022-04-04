@@ -1,7 +1,7 @@
-package trans.rights.event.bus
+package me.austin.event.bus
 
-import trans.rights.event.bus.ListenerType.*
-import trans.rights.event.listener.Listener
+import me.austin.event.bus.ListenerType.*
+import me.austin.event.listener.Listener
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArraySet

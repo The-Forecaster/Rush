@@ -3,36 +3,13 @@ plugins {
     id 'maven-publish'
 }
 
-sourceCompatibility = targetCompatibility = 17
+archivesBaseName = "Rush"
+group 'me.austin.rush'
 
-archivesBaseName = project.mod_name
-version = project.mod_version
-group = project.mod_group
+repositories {
+    mavenCentral()
+}
 
 java {
     withSourcesJar()
-}
-
-tasks.withType(JavaCompile).configureEach {
-    it.options.release.set(17)
-    it.options.encoding = "UTF-8"
-}
-
-compileKotlin {
-    kotlinOptions {
-        jvmTarget = project.java_version as String
-    }
-}
-
-dependencies {
-    include(modImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0")) {
-        exclude module: 'kotlin-stdlib-jdk8'
-        exclude module: 'kotlin-stdlib-common'
-    }
-}
-
-jar {
-    from("LICENSE") {
-        rename { "${it}_${project.archivesBaseName}" }
-    }
 }

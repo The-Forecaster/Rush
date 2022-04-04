@@ -1,4 +1,4 @@
-package trans.rights.event.bus;
+package me.austin.event.bus;
 
 /**
  * Basic structure for an event dispatcher

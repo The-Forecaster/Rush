@@ -1,7 +1,7 @@
-package trans.rights.event.listener.impl
+package me.austin.event.listener.impl
 
-import trans.rights.event.annotation.Priority
-import trans.rights.event.listener.Listener
+import me.austin.event.annotation.Priority
+import me.austin.event.listener.Listener
 import java.lang.reflect.Method
 
 /** Implementation of Listener that uses a method as its target */
