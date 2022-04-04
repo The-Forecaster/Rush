@@ -6,14 +6,16 @@ plugins {
 archivesBaseName = "Rush"
 group 'me.austin.rush'
 
-repositories {
-    mavenCentral()
-}
-
 java {
     withSourcesJar()
 }
 
 compileKotlin {
     targetCompatibility = 17
+}
+
+publishing {
+    publications {
+
+    }
 }
