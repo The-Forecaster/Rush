@@ -13,3 +13,7 @@ repositories {
 java {
     withSourcesJar()
 }
+
+compileKotlin {
+    targetCompatibility = 17
+}
