@@ -8,7 +8,7 @@ package me.austin.rush.listener
 interface Listener<T> : Comparable<Listener<T>> {
 
     /** the priority that the listener will be called upon(use wisely) */
-    val priority: Int
+    var priority: Int
 
     /** the object that this listener was defined in */
     val parent: Any
