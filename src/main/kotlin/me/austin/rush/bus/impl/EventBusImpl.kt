@@ -15,7 +15,7 @@ open class EventManager(type: Class<*>) : AbstractEventBus(type) {
         val lists: List<Listener<*>> = when (subscriber) {
             is Listener<*> -> listOf(subscriber)
             is List<*> -> subscriber as List<Listener<*>>
-            else -> stream(subscriber.javaClass.declaredFields).filter(this::isValid).toList() as List<Listener<*>>
+            else -> subscriber.javaClass.declaredFields.filter(this::isValid).toList() as List<Listener<*>>
         }
 
         lists.stream().forEach { listener ->
