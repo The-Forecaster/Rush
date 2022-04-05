@@ -42,7 +42,7 @@ abstract class AbstractEventBus(
 
     override fun <T> dispatch(event: T): T {
         if (this.registry[event!!::class.java]?.size != 0) {
-            this.getOrPutList(event.javaClass).stream().forEach { listener ->
+            this.getList(event.javaClass)?.stream()?.forEach { listener ->
                 listener(event)
             }
         }
@@ -50,5 +50,5 @@ abstract class AbstractEventBus(
         return event
     }
 
-    private fun <T : Any> getOrPutList(clazz: Class<T>): CopyOnWriteArraySet<Listener<T>> = this.registry.getOrPut(clazz, ::CopyOnWriteArraySet) as CopyOnWriteArraySet<Listener<T>>
+    private fun <T : Any> getList(clazz: Class<T>): CopyOnWriteArraySet<Listener<T>>? = this.registry[clazz] as CopyOnWriteArraySet<Listener<T>>?
 }

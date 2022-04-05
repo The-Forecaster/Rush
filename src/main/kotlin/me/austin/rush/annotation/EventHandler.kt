@@ -9,9 +9,4 @@ const val HIGHEST = 200
 
 @Retention(AnnotationRetention.RUNTIME)
 @Target(AnnotationTarget.FIELD)
-annotation class EventHandler(
-    /**
-     * Priority of the listener
-     */
-    val priority: Int = DEFAULT
-)
+annotation class EventHandler
