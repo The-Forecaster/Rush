@@ -21,10 +21,7 @@ fun <T : Any> listener(
 
 /** Implementation of Listener that uses a lambda function as its target */
 open class LambdaListener<T>(
-    private val action: (T) -> Unit,
-    override val priority: Int,
-    override val parent: Any,
-    override val target: Class<T>
+    private val action: (T) -> Unit, override val priority: Int, override val parent: Any, override val target: Class<T>
 ) : Listener<T> {
     override operator fun invoke(param: T) {
         return this.action(param)
