@@ -22,7 +22,7 @@ fun <T : Any> listener(
 /** Implementation of Listener that uses a lambda function as its target */
 open class LambdaListener<T>(
     private val action: (T) -> Unit,
-    override var priority: Int,
+    override val priority: Int,
     override val parent: Any,
     override val target: Class<T>
 ) : Listener<T> {
