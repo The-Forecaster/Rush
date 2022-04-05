@@ -7,10 +7,12 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArraySet
 
 abstract class AbstractEventBus(
-    protected val type: Class<*>,
-    private val subscribers: MutableSet<Any> = Collections.synchronizedSet(mutableSetOf()),
-    override val registry: ConcurrentHashMap<Class<*>, MutableSet<Listener<*>>> = ConcurrentHashMap()
+    protected val type: Class<*>
 ) : EventBus {
+    override val registry: ConcurrentHashMap<Class<*>, MutableSet<Listener<*>>> = ConcurrentHashMap()
+
+    private val subscribers: MutableSet<Any> = Collections.synchronizedSet(mutableSetOf())
+
     /**
      * Finds and registers all valid listener fields in a target object class. Will then sort them
      * after adding them.
@@ -36,9 +38,7 @@ abstract class AbstractEventBus(
         this.subscribers.remove(subscriber)
     }
 
-    override fun isRegistered(subscriber: Any): Boolean {
-        return this.subscribers.contains(subscriber)
-    }
+    override fun isRegistered(subscriber: Any): Boolean = this.subscribers.contains(subscriber)
 
     override fun <T> dispatch(event: T): T {
         if (this.registry[event!!::class.java]?.size != 0) {
@@ -50,7 +50,5 @@ abstract class AbstractEventBus(
         return event
     }
 
-    private fun <T : Any> getOrPutList(clazz: Class<T>): CopyOnWriteArraySet<Listener<T>> {
-        return this.registry.getOrPut(clazz, ::CopyOnWriteArraySet) as CopyOnWriteArraySet<Listener<T>>
-    }
+    private fun <T : Any> getOrPutList(clazz: Class<T>): CopyOnWriteArraySet<Listener<T>> = this.registry.getOrPut(clazz, ::CopyOnWriteArraySet) as CopyOnWriteArraySet<Listener<T>>
 }
