@@ -8,7 +8,7 @@ import me.austin.rush.listener.Listener
  * @author Austin
  */
 interface EventBus {
-    val registry: Map<Class<*>, MutableSet<Listener<*>>>
+    val registry: MutableMap<Class<*>, MutableSet<Listener<*>>>
 
     /**
      * Adds the Subscriber to the registry
