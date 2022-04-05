@@ -5,27 +5,36 @@ import me.austin.rush.listener.Listener
 import me.austin.rush.listener.impl.LambdaListener
 import java.lang.reflect.Field
 import java.util.*
+import java.util.Arrays.*
 import java.util.concurrent.CopyOnWriteArraySet
 
 open class EventManager(type: Class<*>) : AbstractEventBus(type) {
     constructor() : this(LambdaListener::class.java)
 
     override fun registerFields(subscriber: Any) {
-        Arrays.stream(subscriber.javaClass.declaredFields).filter(this::isValid).forEach { field ->
-            this.registry.getOrPut(field.asListener(subscriber).target, ::CopyOnWriteArraySet).run {
-                this.add(field.asListener(subscriber))
+        val lists: List<Listener<*>> = when (subscriber) {
+            is Listener<*> -> listOf(subscriber)
+            is List<*> -> subscriber as List<Listener<*>>
+            else -> stream(subscriber.javaClass.declaredFields).filter(this::isValid).toList() as List<Listener<*>>
+        }
+
+        lists.stream().forEach { listener ->
+            this.registry.getOrPut(listener.target, ::CopyOnWriteArraySet).run {
+                this.add(listener)
                 this.toSortedSet(Comparator.comparingInt(Listener<*>::priority))
             }
         }
     }
 
     override fun unregisterFields(subscriber: Any) {
-        Arrays.stream(subscriber.javaClass.declaredFields).filter(this::isValid).forEach { field ->
+        stream(subscriber.javaClass.declaredFields).filter(this::isValid).forEach { field ->
             this.registry[field.type]?.remove(field.get(subscriber))
         }
     }
 
-    private fun isValid(field: Field): Boolean = field.isAnnotationPresent(EventHandler::class.java) && this.type.isAssignableFrom(field.type)
+    private fun isValid(field: Field): Boolean {
+        return field.isAnnotationPresent(EventHandler::class.java) && this.type.isAssignableFrom(field.type)
+    }
 }
 
 private fun Field.asListener(parent: Any): LambdaListener<*> {

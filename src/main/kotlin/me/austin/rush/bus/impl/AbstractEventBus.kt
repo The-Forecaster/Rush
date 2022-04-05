@@ -50,5 +50,7 @@ abstract class AbstractEventBus(
         return event
     }
 
-    private fun <T : Any> getList(clazz: Class<T>): CopyOnWriteArraySet<Listener<T>>? = this.registry[clazz] as CopyOnWriteArraySet<Listener<T>>?
+    private fun <T : Any> getList(clazz: Class<T>): CopyOnWriteArraySet<Listener<T>>? {
+        return this.registry[clazz] as CopyOnWriteArraySet<Listener<T>>?
+    }
 }
