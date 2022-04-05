@@ -1,14 +1,13 @@
 package me.austin.rush.bus.impl
 
 import me.austin.rush.bus.EventBus
-import me.austin.rush.bus.impl.ListenerType.*
 import me.austin.rush.listener.Listener
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArraySet
 
 abstract class AbstractEventBus(
-    private val type: ListenerType,
+    protected val type: Class<*>,
     private val subscribers: MutableSet<Any> = Collections.synchronizedSet(mutableSetOf()),
     override val registry: ConcurrentHashMap<Class<*>, MutableSet<Listener<*>>> = ConcurrentHashMap()
 ) : EventBus {
@@ -18,25 +17,13 @@ abstract class AbstractEventBus(
      */
     abstract fun registerFields(subscriber: Any)
 
-    /**
-     * Finds and registers all valid methods in a target object class. Will then sort them after
-     * adding them.
-     */
-    abstract fun registerMethods(subscriber: Any)
-
     /** Finds and removes all valid fields from the subscriber registry */
     abstract fun unregisterFields(subscriber: Any)
-
-    /** Finds and removes all valid methods from the subscriber registry */
-    abstract fun unregisterMethods(subscriber: Any)
 
     override fun register(subscriber: Any) {
         if (isRegistered(subscriber)) return
 
-        when (this.type) {
-            LAMBDA -> this.registerFields(subscriber)
-            METHOD -> this.registerMethods(subscriber)
-        }
+        this.registerFields(subscriber)
 
         this.subscribers.add(subscriber)
     }
@@ -44,10 +31,7 @@ abstract class AbstractEventBus(
     override fun unregister(subscriber: Any) {
         if (!isRegistered(subscriber)) return
 
-        when (this.type) {
-            LAMBDA -> this.unregisterFields(subscriber)
-            METHOD -> this.unregisterMethods(subscriber)
-        }
+        this.unregisterFields(subscriber)
 
         this.subscribers.remove(subscriber)
     }
@@ -69,9 +53,4 @@ abstract class AbstractEventBus(
     private fun <T : Any> getOrPutList(clazz: Class<T>): CopyOnWriteArraySet<Listener<T>> {
         return this.registry.getOrPut(clazz, ::CopyOnWriteArraySet) as CopyOnWriteArraySet<Listener<T>>
     }
-}
-
-enum class ListenerType {
-    METHOD,
-    LAMBDA
 }
