@@ -10,19 +10,22 @@ repositories {
     mavenCentral()
 }
 
-java {
-    withSourcesJar()
-    withJavadocJar()
+dependencies {
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib'
 }
 
 compileKotlin {
     targetCompatibility = 17
 }
 
+java {
+    withSourcesJar()
+    withJavadocJar()
+}
+
 publishing {
     publications {
         maven(MavenPublication) {
-            // noinspection GroovyAssignabilityCheck
             from components.java
         }
     }
