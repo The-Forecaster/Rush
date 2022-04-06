@@ -12,11 +12,13 @@ open class EventManager(type: Class<*>) : AbstractEventBus(type) {
     constructor() : this(LambdaListener::class.java)
 
     override fun registerFields(subscriber: Any) {
-        val lists: List<Listener<*>> = when (subscriber) {
+        val lists: Collection<Listener<*>> = when (subscriber) {
             is Listener<*> -> listOf(subscriber)
-            is List<*> -> subscriber as List<Listener<*>>
-            else -> subscriber.javaClass.declaredFields.filter(this::isValid).toList() as List<Listener<*>>
+            is Collection<*> -> subscriber as Collection<Listener<*>>
+            else -> subscriber.javaClass.declaredFields.filter(this::isValid) as Collection<Listener<*>>
         }
+
+        if (lists.isEmpty()) return
 
         lists.stream().forEach { listener ->
             this.registry.getOrPut(listener.target, ::CopyOnWriteArraySet).run {
