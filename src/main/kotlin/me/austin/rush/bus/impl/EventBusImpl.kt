@@ -17,8 +17,6 @@ open class EventManager(type: Class<out Listener<*>> = LambdaListener::class.jav
             else -> subscriber.javaClass.declaredFields.filter(this::isValid) as List<Listener<*>>
         }
 
-        if (lists.isEmpty()) return
-
         lists.stream().forEach { listener ->
             this.registry.getOrPut(listener.target, ::CopyOnWriteArraySet).run {
                 this.add(listener)
@@ -29,7 +27,7 @@ open class EventManager(type: Class<out Listener<*>> = LambdaListener::class.jav
 
     override fun unregisterFields(subscriber: Any) {
         stream(subscriber.javaClass.declaredFields).filter(this::isValid).forEach { field ->
-            this.registry[field.type]?.remove(field.get(subscriber))
+            this.registry[field.type.kotlin]?.remove(field.get(subscriber))
         }
     }
 

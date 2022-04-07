@@ -1,6 +1,7 @@
 package me.austin.rush.bus
 
 import me.austin.rush.listener.Listener
+import kotlin.reflect.KClass
 
 /**
  * Basic structure for an event dispatcher
@@ -8,7 +9,7 @@ import me.austin.rush.listener.Listener
  * @author Austin
  */
 interface EventBus {
-    val registry: MutableMap<Class<*>, MutableSet<Listener<*>>>
+    val registry: MutableMap<KClass<*>, MutableSet<Listener<*>>>
 
     /**
      * Adds the Subscriber to the registry

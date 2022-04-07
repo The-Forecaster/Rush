@@ -4,9 +4,10 @@ import me.austin.rush.bus.EventBus
 import me.austin.rush.listener.Listener
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArraySet
+import kotlin.reflect.KClass
 
 abstract class AbstractEventBus(protected val type: Class<out Listener<*>>) : EventBus {
-    override val registry: MutableMap<Class<*>, MutableSet<Listener<*>>> = ConcurrentHashMap()
+    override val registry: MutableMap<KClass<*>, MutableSet<Listener<*>>> = ConcurrentHashMap()
 
     private val subscribers: MutableSet<Any> = CopyOnWriteArraySet()
 
@@ -38,7 +39,7 @@ abstract class AbstractEventBus(protected val type: Class<out Listener<*>>) : Ev
     override fun isRegistered(subscriber: Any): Boolean = this.subscribers.contains(subscriber)
 
     override fun <T> dispatch(event: T): T {
-        if (this.registry[event!!::class.java]?.size != 0) {
+        if (this.registry[event!!::class]?.size != 0) {
             this.getList(event.javaClass)?.stream()?.forEach { listener ->
                 listener(event)
             }
@@ -48,6 +49,6 @@ abstract class AbstractEventBus(protected val type: Class<out Listener<*>>) : Ev
     }
 
     private fun <T : Any> getList(clazz: Class<T>): CopyOnWriteArraySet<Listener<T>>? {
-        return this.registry[clazz] as CopyOnWriteArraySet<Listener<T>>?
+        return this.registry[clazz.kotlin] as CopyOnWriteArraySet<Listener<T>>?
     }
 }
