@@ -3,21 +3,10 @@ package me.austin.rush.listener.impl
 import me.austin.rush.annotation.DEFAULT
 import me.austin.rush.listener.Listener
 
-inline fun <reified T : Any> listener(noinline action: (T) -> Unit): LambdaListener<T> {
-    return listener(action, DEFAULT)
-}
-
 inline fun <reified T : Any> listener(
     noinline action: (T) -> Unit,
-    priority: Int
-): LambdaListener<T> {
-    return listener(action, priority, T::class.java)
-}
-
-fun <T : Any> listener(
-    action: (T) -> Unit,
-    priority: Int,
-    target: Class<T>
+    priority: Int = DEFAULT,
+    target: Class<T> = T::class.java
 ): LambdaListener<T> {
     return LambdaListener(action, priority, target)
 }
