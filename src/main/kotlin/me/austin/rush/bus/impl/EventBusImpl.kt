@@ -7,15 +7,14 @@ import java.lang.reflect.Field
 import java.util.*
 import java.util.Arrays.*
 import java.util.concurrent.CopyOnWriteArraySet
+import java.util.stream.Collectors
 
-open class EventManager(type: Class<*>) : AbstractEventBus(type) {
-    constructor() : this(LambdaListener::class.java)
-
+open class EventManager(type: Class<out Listener<*>> = LambdaListener::class.java) : AbstractEventBus(type) {
     override fun registerFields(subscriber: Any) {
-        val lists: Collection<Listener<*>> = when (subscriber) {
+        val lists: List<Listener<*>> = when (subscriber) {
             is Listener<*> -> listOf(subscriber)
-            is Collection<*> -> subscriber as Collection<Listener<*>>
-            else -> subscriber.javaClass.declaredFields.filter(this::isValid) as Collection<Listener<*>>
+            is Collection<*> -> subscriber.stream().filter { this.type.isAssignableFrom(it!!::class.java) }.collect(Collectors.toList()) as List<Listener<*>>
+            else -> subscriber.javaClass.declaredFields.filter(this::isValid) as List<Listener<*>>
         }
 
         if (lists.isEmpty()) return
@@ -37,10 +36,4 @@ open class EventManager(type: Class<*>) : AbstractEventBus(type) {
     private fun isValid(field: Field): Boolean {
         return field.isAnnotationPresent(EventHandler::class.java) && this.type.isAssignableFrom(field.type)
     }
-}
-
-private fun Field.asListener(parent: Any): LambdaListener<*> {
-    this.trySetAccessible()
-
-    return this.get(parent) as LambdaListener<*>
 }

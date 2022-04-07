@@ -2,25 +2,22 @@ package me.austin.rush.bus.impl
 
 import me.austin.rush.bus.EventBus
 import me.austin.rush.listener.Listener
-import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArraySet
 
-abstract class AbstractEventBus(
-    protected val type: Class<*>
-) : EventBus {
-    override val registry: ConcurrentHashMap<Class<*>, MutableSet<Listener<*>>> = ConcurrentHashMap()
+abstract class AbstractEventBus(protected val type: Class<out Listener<*>>) : EventBus {
+    override val registry: MutableMap<Class<*>, MutableSet<Listener<*>>> = ConcurrentHashMap()
 
-    private val subscribers: MutableSet<Any> = Collections.synchronizedSet(mutableSetOf())
+    private val subscribers: MutableSet<Any> = CopyOnWriteArraySet()
 
     /**
      * Finds and registers all valid listener fields in a target object class. Will then sort them
      * after adding them.
      */
-    abstract fun registerFields(subscriber: Any)
+    protected abstract fun registerFields(subscriber: Any)
 
     /** Finds and removes all valid fields from the subscriber registry */
-    abstract fun unregisterFields(subscriber: Any)
+    protected abstract fun unregisterFields(subscriber: Any)
 
     override fun register(subscriber: Any) {
         if (isRegistered(subscriber)) return
