@@ -3,6 +3,7 @@ package me.austin.rush.bus.impl
 import me.austin.rush.bus.EventBus
 import me.austin.rush.listener.Listener
 import me.austin.rush.annotation.EventHandler
+import me.austin.rush.listener.impl.LambdaListener
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArraySet
 import java.util.stream.Stream
@@ -12,7 +13,9 @@ import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.full.isSuperclassOf
 import kotlin.reflect.full.memberProperties
 
-open class EventManager(private val type: KClass<out Listener<*>>) : EventBus {
+open class EventManager(private val type: KClass<out Listener<*>> = LambdaListener::class) : EventBus {
+    constructor(type: Class<out Listener<*>> = LambdaListener::class.java) : this(type.kotlin)
+
     override val registry: MutableMap<KClass<*>, MutableSet<Listener<*>>> = ConcurrentHashMap()
 
     private val subscribers: MutableSet<Any> = CopyOnWriteArraySet()
