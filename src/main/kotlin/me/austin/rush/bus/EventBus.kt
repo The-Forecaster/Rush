@@ -12,14 +12,28 @@ interface EventBus {
     val registry: MutableMap<KClass<*>, MutableSet<Listener<*>>>
 
     /**
-     * Adds the Subscriber to the registry
+     * Adds the listener into the registry
+     * 
+     * @param listener instance of listener<T> to subscribe
+     */
+    fun register(listener: Listener<*>)
+
+    /**
+     * Removes the listener into the registry
+     * 
+     * @param listener instance of listener<*> to unsubscribe
+     */
+    fun unregister(listener: Listener<*>)
+
+    /**
+     * Adds all annotated listeners into the registry
      *
      * @param subscriber event Subscriber instance
      */
     fun register(subscriber: Any)
 
     /**
-     * Removes the Subscriber from the registry
+     * Removes all annotated listeners from the registry
      *
      * @param subscriber event subscriber instance
      */
