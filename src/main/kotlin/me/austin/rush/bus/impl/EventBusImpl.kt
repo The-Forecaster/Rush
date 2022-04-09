@@ -59,8 +59,8 @@ open class EventManager(private val type: KClass<out Listener<*>> = LambdaListen
         return event
     }
 
-    private fun filter(list: Collection<KProperty<*>>): Stream<out Listener<*>> {
-        return list.stream().filter(this::isValid) as Stream<Listener<*>>
+    private fun <T : Any> filter(list: Collection<KProperty<*>>): Stream<out Listener<T>> {
+        return list.stream().filter(this::isValid) as Stream<out Listener<T>>
     }
 
     private fun <T : Any> getList(clazz: Class<T>): CopyOnWriteArraySet<out Listener<T>> {
