@@ -13,7 +13,7 @@ import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.full.isSuperclassOf
 import kotlin.reflect.full.memberProperties
 
-open class EventManager(private val type: KClass<out Listener<*>> = LambdaListener::class) : EventBus {
+open class BasicEventManager(private val type: KClass<out Listener<*>> = LambdaListener::class) : EventBus {
     constructor(type: Class<out Listener<*>> = LambdaListener::class.java) : this(type.kotlin)
 
     override val registry: MutableMap<KClass<*>, MutableSet<Listener<*>>> = ConcurrentHashMap()
@@ -51,7 +51,7 @@ open class EventManager(private val type: KClass<out Listener<*>> = LambdaListen
 
     override fun <T> dispatch(event: T): T {
         if (this.registry[event!!::class]?.size != 0) {
-            this.getList(event.javaClass).stream().forEach { listener ->
+            this.getList(event.javaClass)?.stream()?.forEach { listener ->
                 listener(event)
             }
         }
@@ -63,8 +63,8 @@ open class EventManager(private val type: KClass<out Listener<*>> = LambdaListen
         return list.stream().filter(this::isValid) as Stream<out Listener<*>>
     }
 
-    private fun <T : Any> getList(clazz: Class<T>): CopyOnWriteArraySet<out Listener<T>> {
-        return this.registry[clazz.kotlin] as CopyOnWriteArraySet<out Listener<T>>
+    private fun <T : Any> getList(clazz: Class<T>): CopyOnWriteArraySet<out Listener<T>>? {
+        return this.registry[clazz.kotlin] as CopyOnWriteArraySet<out Listener<T>>?
     }
 
     private fun isValid(property: KProperty<*>): Boolean {
