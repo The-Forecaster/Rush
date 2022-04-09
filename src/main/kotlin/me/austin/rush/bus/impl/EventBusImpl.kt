@@ -13,8 +13,10 @@ import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.full.isSuperclassOf
 import kotlin.reflect.full.memberProperties
 
-open class BasicEventManager(private val type: KClass<out Listener<*>> = LambdaListener::class) : EventBus {
-    constructor(type: Class<out Listener<*>> = LambdaListener::class.java) : this(type.kotlin)
+object BasicEventManager : EventManager(LambdaListener::class)
+
+open class EventManager(private val type: KClass<out Listener<*>>) : EventBus {
+    constructor(type: Class<out Listener<*>>) : this(type.kotlin)
 
     override val registry: MutableMap<KClass<*>, MutableSet<Listener<*>>> = ConcurrentHashMap()
 

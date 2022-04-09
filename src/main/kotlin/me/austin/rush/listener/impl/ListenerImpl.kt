@@ -13,13 +13,19 @@ import kotlin.reflect.KClass
  * @param target class that the listener will listen for
  */
 @JvmOverloads
-inline fun <reified T : Any> listener(
+inline fun <reified T : Any> jlistener(
     action: Consumer<T>,
     priority: Int = DEFAULT,
-    target: Class<T> = T::class.java
-) : Listener<T> {
-    return LambdaListener(action::accept, priority, target.kotlin)
-}
+    target: Class<T> = T::class.java,
+): Listener<T> = LambdaListener(action::accept, priority, target.kotlin)
+
+/**
+ * This is for making simple, non-verbose listeners
+ *
+ * @param action consumer the listeners will call when an event is posted
+ */
+inline fun <reified T : Any> listener(noinline action: (T) -> Unit): LambdaListener<*> =
+    listener(action, DEFAULT, T::class)
 
 /**
  * This is for making listeners in Kotlin specifically, as it has less overhead
@@ -31,16 +37,14 @@ inline fun <reified T : Any> listener(
 inline fun <reified T : Any> listener(
     noinline action: (T) -> Unit,
     priority: Int = DEFAULT,
-    target: KClass<T> = T::class
-): LambdaListener<T> {
-    return LambdaListener(action, priority, target)
-}
+    target: KClass<T> = T::class,
+): LambdaListener<T> = LambdaListener(action, priority, target)
 
 /** Implementation of Listener that uses a lambda function as its target */
 open class LambdaListener<T : Any>(
     private val action: (T) -> Unit,
     override val priority: Int,
-    override val target: KClass<T>
+    override val target: KClass<T>,
 ) : Listener<T> {
     override operator fun invoke(param: T) {
         return this.action(param)
