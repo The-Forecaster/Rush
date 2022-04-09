@@ -59,7 +59,7 @@ open class EventManager(private val type: KClass<out Listener<*>> = LambdaListen
         return event
     }
 
-    private fun <T> filter(list: Collection<KProperty<*>>): Stream<out Listener<*>> {
+    private fun filter(list: Collection<KProperty<*>>): Stream<out Listener<*>> {
         return list.stream().filter(this::isValid) as Stream<out Listener<*>>
     }
 
