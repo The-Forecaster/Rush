@@ -18,7 +18,7 @@ inline fun <reified T : Any> listener(
     priority: Int = DEFAULT,
     target: Class<T> = T::class.java
 ) : Listener<T> {
-    return LambdaListener({action.accept(it)}, priority, target.kotlin)
+    return LambdaListener(action::accept, priority, target.kotlin)
 }
 
 /**
