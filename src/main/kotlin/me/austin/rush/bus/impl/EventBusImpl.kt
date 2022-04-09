@@ -5,12 +5,14 @@ import me.austin.rush.listener.Listener
 import me.austin.rush.annotation.EventHandler
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArraySet
-import java.util.Arrays
 import java.util.stream.Stream
-import java.lang.reflect.Field
 import kotlin.reflect.KClass
+import kotlin.reflect.KProperty
+import kotlin.reflect.full.declaredMemberProperties
+import kotlin.reflect.full.isSuperclassOf
+import kotlin.reflect.full.memberProperties
 
-open class EventManager(private val type: Class<out Listener<*>>) : EventBus {
+open class EventManager(private val type: KClass<out Listener<*>>) : EventBus {
     override val registry: MutableMap<KClass<*>, MutableSet<Listener<*>>> = ConcurrentHashMap()
 
     private val subscribers: MutableSet<Any> = CopyOnWriteArraySet()
@@ -18,7 +20,7 @@ open class EventManager(private val type: Class<out Listener<*>>) : EventBus {
     override fun register(listener: Listener<*>) {
         this.registry.getOrPut(listener.target, ::CopyOnWriteArraySet).let {
             it.add(listener)
-            it.toSortedSet()
+            this.registry[listener.target] = it.toSortedSet()
         }
     }
 
@@ -29,7 +31,7 @@ open class EventManager(private val type: Class<out Listener<*>>) : EventBus {
     override fun register(subscriber: Any) {
         if (isRegistered(subscriber)) return
 
-        this.filter(subscriber::class.java.fields).forEach(this::register)
+        this.filter(subscriber::class.memberProperties).forEach(this::register)
 
         this.subscribers.add(subscriber)
     }
@@ -37,7 +39,7 @@ open class EventManager(private val type: Class<out Listener<*>>) : EventBus {
     override fun unregister(subscriber: Any) {
         if (!isRegistered(subscriber)) return
 
-        this.filter(subscriber::class.java.fields).forEach(this::unregister)
+        this.filter(subscriber::class.declaredMemberProperties).forEach(this::unregister)
 
         this.subscribers.remove(subscriber)
     }
@@ -54,15 +56,15 @@ open class EventManager(private val type: Class<out Listener<*>>) : EventBus {
         return event
     }
 
-    private fun filter(list: Array<out Field>): Stream<Listener<*>> {
-        return Arrays.stream(list).filter(this::isValid) as Stream<Listener<*>>
+    private fun filter(list: Collection<KProperty<*>>): Stream<out Listener<*>> {
+        return list.stream().filter(this::isValid) as Stream<Listener<*>>
     }
 
-    private fun <T : Any> getList(clazz: Class<T>): CopyOnWriteArraySet<Listener<T>> {
+    private fun <T : Any> getList(clazz: Class<T>): CopyOnWriteArraySet<out Listener<T>> {
         return this.registry[clazz.kotlin] as CopyOnWriteArraySet<Listener<T>>
     }
 
-    private fun isValid(field: Field): Boolean {
-        return field.isAnnotationPresent(EventHandler::class.java) && this.type.isAssignableFrom(field.type)
+    private fun isValid(property: KProperty<*>): Boolean {
+        return property.annotations.contains(EventHandler()) && type.isSuperclassOf(property::class)
     }
 }
