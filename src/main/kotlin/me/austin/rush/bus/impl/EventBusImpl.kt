@@ -9,7 +9,6 @@ import java.util.concurrent.CopyOnWriteArraySet
 import java.util.stream.Stream
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
-import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.full.isSuperclassOf
 import kotlin.reflect.full.memberProperties
 
@@ -25,7 +24,7 @@ open class EventManager(private val type: KClass<out Listener<*>>) : EventBus {
     override fun register(listener: Listener<*>) {
         this.registry.getOrPut(listener.target, ::CopyOnWriteArraySet).let {
             it.add(listener)
-            this.registry[listener.target] = it.toSortedSet()
+            this.registry[listener.target] = CopyOnWriteArraySet(it.sorted())
         }
     }
 
@@ -44,7 +43,7 @@ open class EventManager(private val type: KClass<out Listener<*>>) : EventBus {
     override fun unregister(subscriber: Any) {
         if (!isRegistered(subscriber)) return
 
-        this.filter(subscriber::class.declaredMemberProperties).forEach(this::unregister)
+        this.filter(subscriber::class.memberProperties).forEach(this::unregister)
 
         this.subscribers.remove(subscriber)
     }

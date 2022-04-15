@@ -13,7 +13,7 @@ import kotlin.reflect.KClass
  * @param target class that the listener will listen for
  */
 @JvmOverloads
-inline fun <reified T : Any> jlistener(
+inline fun <reified T : Any> listener(
     action: Consumer<T>,
     priority: Int = DEFAULT,
     target: Class<T> = T::class.java,
@@ -46,7 +46,5 @@ open class LambdaListener<T : Any>(
     override val priority: Int,
     override val target: KClass<T>,
 ) : Listener<T> {
-    override operator fun invoke(param: T) {
-        return this.action(param)
-    }
+    override operator fun invoke(param: T) = this.action(param)
 }
