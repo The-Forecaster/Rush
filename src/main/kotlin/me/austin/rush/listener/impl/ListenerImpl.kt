@@ -24,8 +24,7 @@ inline fun <reified T : Any> listener(
  *
  * @param action consumer the listeners will call when an event is posted
  */
-inline fun <reified T : Any> listener(noinline action: (T) -> Unit): LambdaListener<*> =
-    listener(action, DEFAULT, T::class)
+inline fun <reified T : Any> listener(noinline action: (T) -> Unit): LambdaListener<T> = listener(action, DEFAULT, T::class)
 
 /**
  * This is for making listeners in Kotlin specifically, as it has less overhead
