@@ -1,6 +1,6 @@
 package me.austin.rush.listener.impl
 
-import me.austin.rush.annotation.DEFAULT
+import me.austin.rush.type.DEFAULT
 import me.austin.rush.listener.Listener
 import java.util.function.Consumer
 import kotlin.reflect.KClass
@@ -13,11 +13,7 @@ import kotlin.reflect.KClass
  * @param target class that the listener will listen for
  */
 @JvmOverloads
-inline fun <reified T : Any> listener(
-    action: Consumer<T>,
-    priority: Int = DEFAULT,
-    target: Class<T> = T::class.java,
-): Listener<T> = LambdaListener(action::accept, priority, target.kotlin)
+inline fun <reified T : Any> listener(action: Consumer<T>, priority: Int = DEFAULT, target: Class<T> = T::class.java): Listener<T> = LambdaListener(action::accept, priority, target.kotlin)
 
 /**
  * This is for making simple, non-verbose listeners
@@ -33,17 +29,9 @@ inline fun <reified T : Any> listener(noinline action: (T) -> Unit): LambdaListe
  * @param action consumer the listeners will call when an event is posted
  * @param target class that the listener will listen for
  */
-inline fun <reified T : Any> listener(
-    noinline action: (T) -> Unit,
-    priority: Int = DEFAULT,
-    target: KClass<T> = T::class,
-): LambdaListener<T> = LambdaListener(action, priority, target)
+inline fun <reified T : Any> listener(noinline action: (T) -> Unit, priority: Int = DEFAULT, target: KClass<T> = T::class): LambdaListener<T> = LambdaListener(action, priority, target)
 
 /** Implementation of Listener that uses a lambda function as its target */
-open class LambdaListener<T : Any>(
-    private val action: (T) -> Unit,
-    override val priority: Int,
-    override val target: KClass<T>,
-) : Listener<T> {
+open class LambdaListener<T : Any>(private val action: (T) -> Unit, override val priority: Int, override val target: KClass<T>) : Listener<T> {
     override operator fun invoke(param: T) = this.action(param)
 }

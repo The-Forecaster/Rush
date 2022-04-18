@@ -1,6 +1,6 @@
 package me.austin.rush.bus.impl
 
-import me.austin.rush.annotation.EventHandler
+import me.austin.rush.type.EventHandler
 import me.austin.rush.bus.EventBus
 import me.austin.rush.listener.Listener
 import me.austin.rush.listener.impl.LambdaListener
@@ -9,8 +9,8 @@ import java.util.concurrent.CopyOnWriteArraySet
 import java.util.stream.Stream
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
+import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.full.isSuperclassOf
-import kotlin.reflect.full.memberProperties
 
 object BasicEventManager : EventManager(LambdaListener::class)
 
@@ -35,7 +35,7 @@ open class EventManager(private val type: KClass<out Listener<*>>) : EventBus {
     override fun register(subscriber: Any) {
         if (isRegistered(subscriber)) return
 
-        this.filter(subscriber::class.memberProperties).forEach(this::register)
+        this.filter(subscriber::class.declaredMemberProperties).forEach(this::register)
 
         this.subscribers.add(subscriber)
     }
@@ -43,7 +43,7 @@ open class EventManager(private val type: KClass<out Listener<*>>) : EventBus {
     override fun unregister(subscriber: Any) {
         if (!isRegistered(subscriber)) return
 
-        this.filter(subscriber::class.memberProperties).forEach(this::unregister)
+        this.filter(subscriber::class.declaredMemberProperties).forEach(this::unregister)
 
         this.subscribers.remove(subscriber)
     }

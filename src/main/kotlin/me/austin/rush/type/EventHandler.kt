@@ -1,4 +1,4 @@
-package me.austin.rush.annotation
+package me.austin.rush.type
 
 const val DEFAULT = -50
 const val LOWEST = -200

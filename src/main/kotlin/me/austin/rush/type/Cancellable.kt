@@ -1,4 +1,4 @@
-package me.austin.rush.annotation
+package me.austin.rush.type
 
 open class Cancellable {
     var cancelled = false
