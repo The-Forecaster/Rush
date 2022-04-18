@@ -50,8 +50,8 @@ open class EventManager(private val type: KClass<out Listener<*>>) : EventBus {
 
     override fun isRegistered(subscriber: Any): Boolean = this.subscribers.contains(subscriber)
 
-    override fun <T> dispatch(event: T): T {
-        if (this.registry[event!!::class]?.size != 0) {
+    override fun <T : Any> dispatch(event: T): T {
+        if (this.registry[event::class]?.size != 0) {
             this.getList(event.javaClass)?.stream()?.forEach { listener ->
                 listener(event)
             }
@@ -60,15 +60,9 @@ open class EventManager(private val type: KClass<out Listener<*>>) : EventBus {
         return event
     }
 
-    private fun filter(list: Collection<KProperty<*>>): Stream<out Listener<*>> {
-        return list.stream().filter(this::isValid) as Stream<out Listener<*>>
-    }
+    private fun filter(list: Collection<KProperty<*>>): Stream<out Listener<*>> = list.stream().filter(this::isValid) as Stream<out Listener<*>>
 
-    private fun <T : Any> getList(clazz: Class<T>): CopyOnWriteArraySet<out Listener<T>>? {
-        return this.registry[clazz.kotlin] as CopyOnWriteArraySet<out Listener<T>>?
-    }
+    private fun <T : Any> getList(clazz: Class<T>): CopyOnWriteArraySet<out Listener<T>>? = this.registry[clazz.kotlin] as CopyOnWriteArraySet<out Listener<T>>?
 
-    private fun isValid(property: KProperty<*>): Boolean {
-        return property.annotations.contains(EventHandler()) && type.isSuperclassOf(property::class)
-    }
+    private fun isValid(property: KProperty<*>): Boolean = property.annotations.contains(EventHandler()) && type.isSuperclassOf(property::class)
 }

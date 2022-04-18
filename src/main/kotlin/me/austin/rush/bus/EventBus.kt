@@ -54,5 +54,5 @@ interface EventBus {
      *
      * @return the event you passed
     </T> */
-    fun <T> dispatch(event: T): T
+    fun <T : Any> dispatch(event: T): T
 }
