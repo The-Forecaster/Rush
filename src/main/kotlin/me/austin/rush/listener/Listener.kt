@@ -23,6 +23,6 @@ interface Listener<T : Any> : Comparable<Listener<*>> {
     operator fun invoke(param: T)
 
     override operator fun compareTo(other: Listener<*>): Int {
-        return if (priority > other.priority) 1 else if (priority == other.priority) 0 else -1
+        return if (this.priority > other.priority) 1 else if (this.priority == other.priority) 0 else -1
     }
 }
