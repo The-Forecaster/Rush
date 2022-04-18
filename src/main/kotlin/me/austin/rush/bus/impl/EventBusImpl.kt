@@ -1,9 +1,9 @@
-package trans.rights.event.bus.impl
+package me.austin.rush.bus.impl
 
 import me.austin.rush.annotation.EventHandler
-import trans.rights.event.bus.EventBus
-import trans.rights.event.listener.Listener
-import trans.rights.event.listener.impl.LambdaListener
+import me.austin.rush.bus.EventBus
+import me.austin.rush.listener.Listener
+import me.austin.rush.listener.impl.LambdaListener
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArraySet
 import java.util.stream.Stream

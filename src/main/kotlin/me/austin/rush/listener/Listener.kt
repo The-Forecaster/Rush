@@ -1,4 +1,4 @@
-package trans.rights.event.listener
+package me.austin.rush.listener
 
 import kotlin.reflect.KClass
 

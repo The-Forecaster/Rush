@@ -1,6 +1,6 @@
-package trans.rights.event.bus
+package me.austin.rush.bus
 
-import trans.rights.event.listener.Listener
+import me.austin.rush.listener.Listener
 import kotlin.reflect.KClass
 
 /**

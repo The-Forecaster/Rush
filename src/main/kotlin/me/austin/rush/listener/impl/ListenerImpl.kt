@@ -1,7 +1,7 @@
-package trans.rights.event.listener.impl
+package me.austin.rush.listener.impl
 
 import me.austin.rush.annotation.DEFAULT
-import trans.rights.event.listener.Listener
+import me.austin.rush.listener.Listener
 import java.util.function.Consumer
 import kotlin.reflect.KClass
 

@@ -16,9 +16,7 @@ dependencies {
     implementation 'org.jetbrains.kotlin:kotlin-reflect:1.6.20'
 }
 
-compileKotlin {
-    targetCompatibility = 17
-}
+compileKotlin.targetCompatibility = 17
 
 java {
     withSourcesJar()
