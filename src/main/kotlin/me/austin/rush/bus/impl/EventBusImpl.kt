@@ -51,7 +51,7 @@ open class EventManager(private val type: KClass<out Listener<*>>) : EventBus {
     override fun isRegistered(subscriber: Any): Boolean = this.subscribers.contains(subscriber)
 
     override fun <T : Any> dispatch(event: T): T {
-        if (this.registry[event::class]?.size != 0) {
+        if ((this.registry[event::class]?.size ?: 0) != 0) {
             this.getList(event.javaClass)?.stream()?.forEach { listener ->
                 listener(event)
             }
