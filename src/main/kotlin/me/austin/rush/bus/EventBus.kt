@@ -21,14 +21,14 @@ interface EventBus {
     /**
      * Removes the listener into the registry
      *
-     * @param listener instance of listener<*> to unsubscribe
+     * @param listener listener object to unsubscribe
      */
     fun unregister(listener: Listener<*>)
 
     /**
      * Adds all annotated listeners into the registry
      *
-     * @param subscriber event Subscriber instance
+     * @param subscriber event subscriber instance
      */
     fun register(subscriber: Any)
 

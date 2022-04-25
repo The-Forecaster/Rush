@@ -10,11 +10,14 @@ repositories {
     mavenCentral()
 }
 
+sourceCompatibility = targetCompatibility = 17
+
 dependencies {
     implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1'
     
-    implementation 'org.jetbrains.kotlin:kotlin-reflect:1.6.20'
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8"
+    implementation 'org.jetbrains.kotlin:kotlin-reflect:1.6.21'
+
+    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
 }
 
 java {
@@ -32,11 +35,11 @@ publishing {
 }
 compileKotlin {
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = '17'
     }
 }
 compileTestKotlin {
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = '17'
     }
 }

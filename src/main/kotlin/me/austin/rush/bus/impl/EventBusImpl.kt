@@ -1,6 +1,6 @@
 package me.austin.rush.bus.impl
 
-import me.austin.rush.type.EventHandler
+import me.austin.rush.listener.impl.EventHandler
 import me.austin.rush.bus.EventBus
 import me.austin.rush.listener.Listener
 import me.austin.rush.listener.impl.LambdaListener
@@ -12,9 +12,7 @@ import kotlin.reflect.KProperty
 import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.full.isSuperclassOf
 
-object BasicEventManager : EventManager(LambdaListener::class)
-
-open class EventManager(private val type: KClass<out Listener<*>>) : EventBus {
+open class EventManager(private val type: KClass<out Listener<*>> = LambdaListener::class) : EventBus {
     constructor(type: Class<out Listener<*>>) : this(type.kotlin)
 
     override val registry: MutableMap<KClass<*>, MutableSet<Listener<*>>> = ConcurrentHashMap()
@@ -48,21 +46,19 @@ open class EventManager(private val type: KClass<out Listener<*>>) : EventBus {
         this.subscribers.remove(subscriber)
     }
 
-    override fun isRegistered(subscriber: Any): Boolean = this.subscribers.contains(subscriber)
+    override fun isRegistered(subscriber: Any) = this.subscribers.contains(subscriber)
 
     override fun <T : Any> dispatch(event: T): T {
         if ((this.registry[event::class]?.size ?: 0) != 0) {
-            this.getList(event.javaClass)?.stream()?.forEach { listener ->
-                listener(event)
+            (this.registry[event::class] as CopyOnWriteArraySet<out Listener<T>>).stream().forEach {
+                it(event)
             }
         }
 
         return event
     }
 
-    private fun filter(list: Collection<KProperty<*>>): Stream<out Listener<*>> = list.stream().filter(this::isValid) as Stream<out Listener<*>>
+    private fun filter(list: Collection<KProperty<*>>) = list.stream().filter(this::isValid) as Stream<out Listener<*>>
 
-    private fun <T : Any> getList(clazz: Class<T>): CopyOnWriteArraySet<out Listener<T>>? = this.registry[clazz.kotlin] as CopyOnWriteArraySet<out Listener<T>>?
-
-    private fun isValid(property: KProperty<*>): Boolean = property.annotations.contains(EventHandler()) && type.isSuperclassOf(property::class)
+    private fun isValid(property: KProperty<*>) = property.annotations.contains(EventHandler()) && (type.isSuperclassOf(property::class) || type::class == property::class)
 }
