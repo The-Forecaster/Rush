@@ -6,18 +6,30 @@ plugins {
 version '2.1'
 group 'me.austin.rush'
 
+sourceCompatibility = targetCompatibility = JavaVersion.VERSION_17
+
+compileKotlin.kotlinOptions.jvmTarget = compileTestKotlin.kotlinOptions.jvmTarget = '17'
+
 repositories {
     mavenCentral()
 }
 
-sourceCompatibility = targetCompatibility = 17
-
 dependencies {
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1'
+    implementation('org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.1') {
+        exclude module: 'kotlin-stdlib-jdk8'
+        exclude module: 'kotlin-stdlib-common'
+    }
     
-    implementation 'org.jetbrains.kotlin:kotlin-reflect:1.6.21'
+    implementation("org.jetbrains.kotlin:kotlin-reflect:$project.kotlin_version") {
+        exclude module: 'kotlin-stdlib'
+    }
 
-    implementation 'org.jetbrains.kotlin:kotlin-stdlib-jdk8'
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:$project.kotlin_version") {
+        exclude module: 'kotlin-stdlib-common'
+        exclude module: 'annotations'
+    }
+
+    compileOnly 'org.jetbrains:annotations:23.0.0'
 }
 
 java {
@@ -31,15 +43,5 @@ publishing {
         maven(MavenPublication) {
             from components.java
         }
-    }
-}
-compileKotlin {
-    kotlinOptions {
-        jvmTarget = '17'
-    }
-}
-compileTestKotlin {
-    kotlinOptions {
-        jvmTarget = '17'
     }
 }
