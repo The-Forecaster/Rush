@@ -50,7 +50,7 @@ open class EventManager(private val type: KClass<out Listener<*>> = LambdaListen
 
     override fun <T : Any> dispatch(event: T): T {
         if ((this.registry[event::class]?.size ?: 0) != 0) {
-            (this.registry[event::class] as CopyOnWriteArraySet<out Listener<T>>).stream().forEach {
+            (this.registry[event::class]!! as CopyOnWriteArraySet<out Listener<T>>).stream().forEach {
                 it(event)
             }
         }

@@ -1,11 +1,10 @@
 package me.austin.rush.type
 
 abstract class Cancellable {
-    protected var cancelled = false
+    var isCancelled = false
+        private set
 
     fun cancel() {
-        this.cancelled = true
+        this.isCancelled = true
     }
-
-    fun isCancelled() = cancelled
 }
