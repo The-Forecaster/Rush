@@ -9,7 +9,7 @@ import kotlin.reflect.KClass
  * @author Austin
  */
 interface EventBus {
-    val registry: MutableMap<KClass<*>, MutableSet<Listener<*>>>
+    val registry: MutableMap<KClass<*>, MutableList<Listener<*>>>
 
     /**
      * Adds the listener into the registry
@@ -38,13 +38,6 @@ interface EventBus {
      * @param subscriber event subscriber instance
      */
     fun unregister(subscriber: Any)
-
-    /**
-     * Check if an object is currently in the registry
-     *
-     * @return if the object is in the registry
-     */
-    fun isRegistered(subscriber: Any): Boolean
 
     /**
      * Post an event to be processed by the subscribed methods or listener objects

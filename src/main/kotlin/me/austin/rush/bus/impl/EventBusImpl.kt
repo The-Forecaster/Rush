@@ -1,28 +1,35 @@
 package me.austin.rush.bus.impl
 
-import me.austin.rush.listener.impl.EventHandler
 import me.austin.rush.bus.EventBus
 import me.austin.rush.listener.Listener
+import me.austin.rush.listener.impl.EventHandler
 import me.austin.rush.listener.impl.LambdaListener
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.CopyOnWriteArraySet
-import java.util.stream.Stream
+import java.util.concurrent.CopyOnWriteArrayList
+import java.util.stream.Collectors
 import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 import kotlin.reflect.full.declaredMemberProperties
-import kotlin.reflect.full.isSuperclassOf
+import kotlin.reflect.full.superclasses
 
 open class EventManager(private val type: KClass<out Listener<*>> = LambdaListener::class) : EventBus {
     constructor(type: Class<out Listener<*>>) : this(type.kotlin)
 
-    override val registry: MutableMap<KClass<*>, MutableSet<Listener<*>>> = ConcurrentHashMap()
+    override val registry: MutableMap<KClass<*>, MutableList<Listener<*>>> = ConcurrentHashMap()
 
-    private val subscribers: MutableSet<Any> = CopyOnWriteArraySet()
+    private val cache: MutableMap<Any, MutableList<Listener<*>>> = ConcurrentHashMap()
 
     override fun register(listener: Listener<*>) {
-        this.registry.getOrPut(listener.target, ::CopyOnWriteArraySet).let {
-            it.add(listener)
-            this.registry[listener.target] = CopyOnWriteArraySet(it.sorted())
+        this.registry.getOrPut(listener.target, ::CopyOnWriteArrayList).let {
+            var index = 0
+
+            while (index < it.size) {
+                if (it[index].priority < listener.priority) break
+
+                index++
+            }
+
+            it.add(index, listener)
         }
     }
 
@@ -31,34 +38,24 @@ open class EventManager(private val type: KClass<out Listener<*>> = LambdaListen
     }
 
     override fun register(subscriber: Any) {
-        if (isRegistered(subscriber)) return
-
-        this.filter(subscriber::class.declaredMemberProperties).forEach(this::register)
-
-        this.subscribers.add(subscriber)
+        this.cache.computeIfAbsent(subscriber) {
+            subscriber::class.declaredMemberProperties.stream().filter(this::isValid).map(this::asListener).collect(
+                Collectors.toList()
+            )
+        }.forEach(this::register)
     }
 
     override fun unregister(subscriber: Any) {
-        if (!isRegistered(subscriber)) return
-
-        this.filter(subscriber::class.declaredMemberProperties).forEach(this::unregister)
-
-        this.subscribers.remove(subscriber)
+        subscriber::class.declaredMemberProperties.stream().filter(this::isValid).map(this::asListener).forEach(this::unregister)
     }
 
-    override fun isRegistered(subscriber: Any) = this.subscribers.contains(subscriber)
-
     override fun <T : Any> dispatch(event: T): T {
-        if ((this.registry[event::class]?.size ?: 0) != 0) {
-            (this.registry[event::class]!! as CopyOnWriteArraySet<out Listener<T>>).stream().forEach {
-                it(event)
-            }
-        }
+        (registry[event::class] as MutableList<Listener<T>>?)?.forEach { it(event) }
 
         return event
     }
 
-    private fun filter(list: Collection<KProperty<*>>) = list.stream().filter(this::isValid) as Stream<out Listener<*>>
+    private fun asListener(property: KProperty<*>) = property as Listener<*>
 
-    private fun isValid(property: KProperty<*>) = property.annotations.contains(EventHandler()) && (type.isSuperclassOf(property::class) || type::class == property::class)
+    private fun isValid(property: KProperty<*>) = property.annotations.contains(EventHandler()) && property::class.superclasses.contains(Listener::class)
 }
