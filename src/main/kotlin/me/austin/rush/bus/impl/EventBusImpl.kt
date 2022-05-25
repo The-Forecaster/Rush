@@ -37,13 +37,13 @@ open class EventManager(private val type: KClass<out Listener<*>> = LambdaListen
         this.registry[listener.target]?.remove(listener)
     }
 
-    override fun register(subscriber: Any) = this.cache.computeIfAbsent(subscriber) {
+    override fun register(subscriber: Any): Unit = this.cache.getOrPut(subscriber) {
         subscriber::class.declaredMemberProperties.stream().filter(this::isValid).map(this::asListener).collect(
             Collectors.toList()
         )
     }.forEach(this::register)
 
-    override fun unregister(subscriber: Any) = subscriber::class.declaredMemberProperties.stream().filter(this::isValid).map(this::asListener).forEach(this::unregister)
+    override fun unregister(subscriber: Any): Unit = subscriber::class.declaredMemberProperties.stream().filter(this::isValid).map(this::asListener).forEach(this::unregister)
 
     override fun <T : Any> dispatch(event: T): T {
         (registry[event::class] as MutableList<Listener<T>>?)?.forEach { it(event) }
