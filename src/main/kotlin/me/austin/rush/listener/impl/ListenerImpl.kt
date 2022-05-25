@@ -31,7 +31,7 @@ inline fun <reified T : Any> listener(noinline action: (T) -> Unit) = listener(a
 inline fun <reified T : Any> listener(noinline action: (T) -> Unit, priority: Int = DEFAULT, target: KClass<T> = T::class) = LambdaListener(action, priority, target)
 
 /** Implementation of Listener that uses a lambda function as its target */
-class LambdaListener<T : Any> @PublishedApi internal constructor(
+open class LambdaListener<T : Any> @PublishedApi internal constructor(
     internal val action: (T) -> Unit,
     override val priority: Int,
     override val target: KClass<T>
