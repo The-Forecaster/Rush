@@ -6,10 +6,6 @@ plugins {
 version '2.1'
 group 'me.austin.rush'
 
-sourceCompatibility = targetCompatibility = JavaVersion.VERSION_17
-
-compileKotlin.kotlinOptions.jvmTarget = compileTestKotlin.kotlinOptions.jvmTarget = '17'
-
 repositories {
     mavenCentral()
 }
@@ -30,12 +26,6 @@ dependencies {
     }
 
     compileOnly 'org.jetbrains:annotations:23.0.0'
-}
-
-java {
-    withSourcesJar()
-
-    withJavadocJar()
 }
 
 publishing {
