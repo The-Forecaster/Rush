@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     java
     kotlin("jvm") version "1.7.0"
+    id("org.jetbrains.dokka") version "1.7.0"
 }
 
 version "2.1"
@@ -49,5 +50,9 @@ tasks {
         targetCompatibility = "17"
         sourceCompatibility = "17"
         options.encoding = "UTF-8"
+    }
+
+    named<Jar>("javadocJar") {
+        from(named("dokkaJavadoc"))
     }
 }

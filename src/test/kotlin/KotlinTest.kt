@@ -1,5 +1,5 @@
-import me.austin.rush.bus.impl.EventManager
-import me.austin.rush.listener.impl.listener
+import me.austin.rush.bus.EventManager
+import me.austin.rush.listener.listener
 
 fun main() {
     val bus = EventManager()

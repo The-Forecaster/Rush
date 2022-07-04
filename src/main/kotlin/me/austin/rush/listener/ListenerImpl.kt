@@ -1,6 +1,5 @@
-package me.austin.rush.listener.impl
+package me.austin.rush.listener
 
-import me.austin.rush.listener.Listener
 import net.jodah.typetools.TypeResolver
 import java.util.function.Consumer
 import kotlin.reflect.KClass

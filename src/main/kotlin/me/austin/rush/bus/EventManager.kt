@@ -1,9 +1,8 @@
-package me.austin.rush.bus.impl
+package me.austin.rush.bus
 
-import me.austin.rush.bus.EventBus
 import me.austin.rush.listener.Listener
-import me.austin.rush.listener.impl.EventHandler
-import me.austin.rush.listener.impl.LambdaListener
+import me.austin.rush.listener.EventHandler
+import me.austin.rush.listener.LambdaListener
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.stream.Collectors
@@ -12,6 +11,9 @@ import kotlin.reflect.KProperty
 import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.full.superclasses
 
+/**
+ * Basic implementation of [EventBus]
+ */
 open class EventManager(private val type: KClass<out Listener<*>> = LambdaListener::class) : EventBus {
     constructor(type: Class<out Listener<*>>) : this(type.kotlin)
 
@@ -36,12 +38,12 @@ open class EventManager(private val type: KClass<out Listener<*>> = LambdaListen
     }
 
     override fun register(subscriber: Any): Unit = this.cache.getOrPut(subscriber) {
-        subscriber::class.declaredMemberProperties.stream().filter(this::isValid).map(this::asListener).collect(
+        subscriber::class.declaredMemberProperties.stream().filter(::isValid).map(::asListener).collect(
             Collectors.toList()
         )
     }.forEach(this::register)
 
-    override fun unregister(subscriber: Any): Unit = subscriber::class.declaredMemberProperties.stream().filter(this::isValid).map(this::asListener).forEach(this::unregister)
+    override fun unregister(subscriber: Any): Unit = subscriber::class.declaredMemberProperties.stream().filter(::isValid).map(::asListener).forEach(::unregister)
 
     override fun <T : Any> dispatch(event: T): T {
         (registry[event::class] as MutableList<Listener<T>>?)?.forEach { it(event) }

@@ -1,8 +1,8 @@
 import me.austin.rush.bus.EventBus;
-import me.austin.rush.bus.impl.EventManager;
+import me.austin.rush.bus.EventManager;
 import me.austin.rush.listener.Listener;
 
-import static me.austin.rush.listener.impl.ListenerImplKt.listener;
+import static me.austin.rush.listener.ListenerImplKt.listener;
 
 public class JavaTest {
     public static void main(String[] args) {
