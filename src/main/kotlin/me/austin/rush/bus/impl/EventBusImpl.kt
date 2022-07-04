@@ -19,18 +19,16 @@ open class EventManager(private val type: KClass<out Listener<*>> = LambdaListen
 
     private val cache: MutableMap<Any, MutableList<Listener<*>>> = ConcurrentHashMap()
 
-    override fun register(listener: Listener<*>) {
-        this.registry.getOrPut(listener.target, ::CopyOnWriteArrayList).let {
-            var index = 0
+    override fun register(listener: Listener<*>) = this.registry.getOrPut(listener.target, ::CopyOnWriteArrayList).let {
+        var index = 0
 
-            while (index < it.size) {
-                if (it[index].priority < listener.priority) break
+        while (index < it.size) {
+            if (it[index].priority < listener.priority) break
 
-                index++
-            }
-
-            it.add(index, listener)
+            index++
         }
+
+        it.add(index, listener)
     }
 
     override fun unregister(listener: Listener<*>) {
