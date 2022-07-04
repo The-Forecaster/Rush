@@ -29,7 +29,7 @@ interface EventBus {
     fun registerAll(listeners: Iterable<Listener<*>>) = Stream.of(listeners).forEach(::register)
 
     /**
-     * Removes the listener into the registry
+     * Removes the listener from the registry
      *
      * @param listener listener object to unsubscribe
      */
