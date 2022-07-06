@@ -1,6 +1,25 @@
 package me.austin.rush.listener
 
+import net.jodah.typetools.TypeResolver
+import java.util.function.Consumer
 import kotlin.reflect.KClass
+
+/**
+ * This is for creating listeners in Java specifically, as it uses consumers which don't have a return statement
+ *
+ * @param T type the consumer accepts
+ * @param action consumer the listeners will call when an event is posted
+ * @param target class that the listener will listen for
+ */
+@JvmOverloads
+fun <T : Any> listener(
+    action: Consumer<T>,
+    priority: Int = DEFAULT,
+    target: Class<T> = TypeResolver.resolveRawArguments(
+        Consumer::class.java,
+        action::class.java
+    )[0] as Class<T>
+) = LambdaListener(target.kotlin, priority, action::accept)
 
 /**
  * This is for making simple, non-verbose listeners

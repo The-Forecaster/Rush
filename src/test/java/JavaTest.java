@@ -1,16 +1,18 @@
 import me.austin.rush.bus.EventBus;
 import me.austin.rush.bus.EventManager;
+import me.austin.rush.listener.EventHandler;
 import me.austin.rush.listener.Listener;
 
 import static me.austin.rush.listener.ListenerImplKt.listener;
 
 public class JavaTest {
+    @EventHandler
     private final Listener<String> LISTENER = listener(event -> System.out.println("${event} again!"));
 
     public static void main(String[] args) {
-        EventBus BUS = new EventManager();
+        final EventBus BUS = new EventManager();
 
-        Listener<String> LIST = listener(System.out::println);
+        final Listener<String> LIST = listener(System.out::println);
 
         BUS.register(new JavaTest());
         BUS.register(LIST);

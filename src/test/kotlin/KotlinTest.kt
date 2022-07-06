@@ -1,4 +1,5 @@
 import me.austin.rush.bus.EventManager
+import me.austin.rush.listener.EventHandler
 import me.austin.rush.listener.listener
 
 val bus = EventManager()
@@ -14,5 +15,6 @@ fun main() {
 }
 
 object Main {
+    @EventHandler
     private val listener = listener<String> { println(it)}
 }

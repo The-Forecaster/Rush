@@ -1,11 +1,14 @@
 package me.austin.rush.bus
 
 import me.austin.rush.listener.EventHandler
+import me.austin.rush.listener.LambdaListener
 import me.austin.rush.listener.Listener
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.reflect.KCallable
 import kotlin.reflect.KClass
+import kotlin.reflect.KType
+import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.full.declaredMembers
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.jvm.isAccessible
@@ -14,10 +17,13 @@ import kotlin.reflect.typeOf
 /**
  * Basic implementation of [EventBus]
  */
-open class EventManager : EventBus {
+open class EventManager(val listenerKClass: KClass<*>) : EventBus {
+
     override val registry = ConcurrentHashMap<KClass<*>, MutableList<Listener<*>>>()
 
     private val cache = ConcurrentHashMap<Any, MutableList<Listener<*>>>()
+
+    constructor(listenerClass: Class<*>) : this(listenerClass.kotlin)
 
     override fun register(listener: Listener<*>) = this.registry.getOrPut(listener.target, ::CopyOnWriteArrayList).let {
         if (it.contains(listener)) return@let false
@@ -44,15 +50,17 @@ open class EventManager : EventBus {
         (registry[event::class] as MutableList<Listener<T>>?)?.forEach { it(event) }
         return event
     }
+
+    private inline fun isListener(callable: KCallable<*>) = callable.findAnnotation<EventHandler>() != null && callable.re
 }
 
 // Most of this is pasted from bush https://github.com/therealbush/eventbus-kotlin, check him out if you want to see actually good code
 
 private inline val KCallable<*>.isListener
-    get() = this.findAnnotation<EventHandler>() != null && this.returnType == typeOf<Listener<*>>()
+    get() = this.findAnnotation<EventHandler>() != null
 
 private inline val <T: Any> KClass<T>.listeners
-    get() = this.declaredMembers.filter(KCallable<*>::isListener) as List<KCallable<Listener<*>>>
+    get() = this.declaredMemberProperties.filter(KCallable<*>::isListener) as List<KCallable<Listener<*>>>
 
 private inline val Any.listeners
     get() = this::class.listeners.map { it.handleCall(this) }.toMutableList()
