@@ -6,8 +6,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.reflect.KCallable
 import kotlin.reflect.KClass
-import kotlin.reflect.KProperty1
-import kotlin.reflect.full.declaredMemberProperties
+import kotlin.reflect.full.declaredMembers
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.jvm.isAccessible
 import kotlin.reflect.typeOf
@@ -49,11 +48,11 @@ open class EventManager : EventBus {
 
 // Most of this is pasted from bush https://github.com/therealbush/eventbus-kotlin, check him out if you want to see actually good code
 
-private inline val KProperty1<*, *>.isListener
+private inline val KCallable<*>.isListener
     get() = this.findAnnotation<EventHandler>() != null && this.returnType == typeOf<Listener<*>>()
 
-private inline val <T : Any> KClass<T>.listeners
-    get() = this.declaredMemberProperties.filter(KProperty1<T, *>::isListener) as List<KProperty1<T, Listener<*>>>
+private inline val <T: Any> KClass<T>.listeners
+    get() = this.declaredMembers.filter(KCallable<*>::isListener) as List<KCallable<Listener<*>>>
 
 private inline val Any.listeners
     get() = this::class.listeners.map { it.handleCall(this) }.toMutableList()

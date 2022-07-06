@@ -7,13 +7,13 @@ import kotlin.reflect.KClass
  *
  * @author Austin
  */
-interface Listener<T : Any> : Comparable<Listener<*>> {
-
-    /** the priority that the listener will be called upon(use wisely) */
-    val priority: Int
+interface Listener<T: Any> : Comparable<Listener<*>> {
 
     /** the class of the target event */
     val target: KClass<T>
+
+    /** the priority that the listener will be called upon(use wisely) */
+    val priority: Int
 
     /**
      * Processes an event passed through this listener
