@@ -1,27 +1,28 @@
 package me.austin.rush.bus
 
-import me.austin.rush.listener.Listener
 import me.austin.rush.listener.EventHandler
-import me.austin.rush.listener.LambdaListener
+import me.austin.rush.listener.Listener
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
-import java.util.stream.Collectors
+import kotlin.reflect.KCallable
 import kotlin.reflect.KClass
-import kotlin.reflect.KProperty
+import kotlin.reflect.KProperty1
 import kotlin.reflect.full.declaredMemberProperties
-import kotlin.reflect.full.superclasses
+import kotlin.reflect.full.findAnnotation
+import kotlin.reflect.jvm.isAccessible
+import kotlin.reflect.typeOf
 
 /**
  * Basic implementation of [EventBus]
  */
-open class EventManager(private val type: KClass<out Listener<*>> = LambdaListener::class) : EventBus {
-    constructor(type: Class<out Listener<*>>) : this(type.kotlin)
+open class EventManager : EventBus {
+    override val registry = ConcurrentHashMap<KClass<*>, MutableList<Listener<*>>>()
 
-    override val registry: MutableMap<KClass<*>, MutableList<Listener<*>>> = ConcurrentHashMap()
-
-    private val cache: MutableMap<Any, MutableList<Listener<*>>> = ConcurrentHashMap()
+    private val cache = ConcurrentHashMap<Any, MutableList<Listener<*>>>()
 
     override fun register(listener: Listener<*>) = this.registry.getOrPut(listener.target, ::CopyOnWriteArrayList).let {
+        if (it.contains(listener)) return@let false
+
         var index = 0
 
         while (index < it.size) {
@@ -31,27 +32,33 @@ open class EventManager(private val type: KClass<out Listener<*>> = LambdaListen
         }
 
         it.add(index, listener)
+        return@let true
     }
 
-    override fun unregister(listener: Listener<*>) {
-        this.registry[listener.target]?.remove(listener)
-    }
+    override fun unregister(listener: Listener<*>): Boolean = this.registry[listener.target]?.remove(listener) ?: false
 
-    override fun register(subscriber: Any): Unit = this.cache.getOrPut(subscriber) {
-        subscriber::class.declaredMemberProperties.stream().filter(::isValid).map(::asListener).collect(
-            Collectors.toList()
-        )
-    }.forEach(this::register)
+    override fun register(subscriber: Any): Boolean = this.cache.getOrPut(subscriber, subscriber::listeners).map(::register).all()
 
-    override fun unregister(subscriber: Any): Unit = subscriber::class.declaredMemberProperties.stream().filter(::isValid).map(::asListener).forEach(::unregister)
+    override fun unregister(subscriber: Any): Boolean = subscriber.listeners.map(::unregister).all()
 
     override fun <T : Any> dispatch(event: T): T {
         (registry[event::class] as MutableList<Listener<T>>?)?.forEach { it(event) }
-
         return event
     }
+}
 
-    private fun asListener(property: KProperty<*>) = property as Listener<*>
+// Most of this is pasted from bush https://github.com/therealbush/eventbus-kotlin, check him out if you want to see actually good code
 
-    private fun isValid(property: KProperty<*>) = property.annotations.contains(EventHandler()) && property::class.superclasses.contains(Listener::class)
+private inline val KProperty1<*, *>.isListener
+    get() = this.findAnnotation<EventHandler>() != null && this.returnType == typeOf<Listener<*>>()
+
+private inline val <T : Any> KClass<T>.listeners
+    get() = this.declaredMemberProperties.filter(KProperty1<T, *>::isListener) as List<KProperty1<T, Listener<*>>>
+
+private inline val Any.listeners
+    get() = this::class.listeners.map { it.handleCall(this) }.toMutableList()
+
+private inline fun <reified T : Any> KCallable<T>.handleCall(receiver: Any? = null): T {
+    this.isAccessible = true
+    return runCatching { call(receiver) }.getOrElse { call() }
 }

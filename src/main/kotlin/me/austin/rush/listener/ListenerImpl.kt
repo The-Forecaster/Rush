@@ -15,10 +15,10 @@ import kotlin.reflect.KClass
 fun <T : Any> listener(
     action: Consumer<T>,
     priority: Int = DEFAULT,
-    target: Class<T> = TypeResolver.resolveRawArgument(
+    target: Class<T> = TypeResolver.resolveRawArguments(
         Consumer::class.java,
-        action.javaClass
-    ) as Class<T>
+        action::class.java
+    )[0] as Class<T>
 ) = LambdaListener(action::accept, priority, target.kotlin)
 
 /**

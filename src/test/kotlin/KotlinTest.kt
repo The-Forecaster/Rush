@@ -1,10 +1,18 @@
 import me.austin.rush.bus.EventManager
 import me.austin.rush.listener.listener
 
+val bus = EventManager()
+
 fun main() {
-    val bus = EventManager()
     val listener = listener<String> { println(it) }
 
-    bus.register(listener)
-    bus.dispatch("I just posted an event!")
+    with(bus) {
+        register(listener)
+        register(Main)
+        dispatch("I just posted an event!")
+    }
+}
+
+object Main {
+    private val listener = listener<String> { println(it)}
 }
