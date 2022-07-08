@@ -5,8 +5,8 @@ plugins {
     kotlin("jvm") version "1.7.0"
 }
 
-version "2.1.1"
-group "me.austin.rush"
+version = "2.1.1"
+group = "me.austin.rush"
 
 repositories {
     mavenCentral()
@@ -15,6 +15,9 @@ repositories {
 java {
     withSourcesJar()
     withJavadocJar()
+
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 dependencies {
@@ -43,5 +46,9 @@ tasks {
 
     withType<JavaCompile> {
         options.encoding = "UTF-8"
+        options.release.set(17)
+
+        sourceCompatibility = "17"
+        targetCompatibility = "17"
     }
 }

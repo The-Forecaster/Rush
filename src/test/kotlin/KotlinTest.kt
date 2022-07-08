@@ -16,5 +16,5 @@ fun main() {
 
 object Main {
     @EventHandler
-    val listener = listener<String> { println(it)}
+    val listener = listener<String> { println("$it again!")}
 }
