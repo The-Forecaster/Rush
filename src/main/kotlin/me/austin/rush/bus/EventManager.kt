@@ -34,7 +34,7 @@ open class EventManager : EventBus {
         return@let true
     }
 
-    override fun unregister(listener: Listener<*>): Boolean = this.registry[listener.target]?.remove(listener) ?: false
+    override fun unregister(listener: Listener<*>) = this.registry[listener.target]?.remove(listener) ?: false
 
     override fun register(subscriber: Any): Boolean = this.cache.getOrPut(subscriber, subscriber::listeners).map(::register).all()
 
