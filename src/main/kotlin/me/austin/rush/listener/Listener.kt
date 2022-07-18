@@ -7,7 +7,7 @@ import kotlin.reflect.KClass
  *
  * @author Austin
  */
-interface Listener<T: Any> : Comparable<Listener<*>> {
+interface Listener<T : Any> {
 
     /** the class of the target event */
     val target: KClass<T>
@@ -21,6 +21,4 @@ interface Listener<T: Any> : Comparable<Listener<*>> {
      * @param param event object that is being processed
      */
     operator fun invoke(param: T)
-
-    override operator fun compareTo(other: Listener<*>) = if (this.priority > other.priority) 1 else if (this.priority == other.priority) 0 else -1
 }

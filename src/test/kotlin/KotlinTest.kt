@@ -5,16 +5,16 @@ import me.austin.rush.listener.listener
 val bus = EventManager()
 
 fun main() {
-    val listener = listener<String> { println(it) }
+    val listener = listener<String> { println("$it!") }
 
     with(bus) {
         register(listener)
         register(Main)
-        dispatch("I just posted an event!")
+        dispatch("I just posted an event")
     }
 }
 
 object Main {
     @EventHandler
-    val listener = listener<String> { println("$it again!")}
+    val listener = listener<String>( { println("$it again!")}, priority = 500)
 }

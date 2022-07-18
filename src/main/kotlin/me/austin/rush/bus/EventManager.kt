@@ -2,6 +2,7 @@ package me.austin.rush.bus
 
 import me.austin.rush.listener.EventHandler
 import me.austin.rush.listener.Listener
+import me.austin.rush.type.Cancellable
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.reflect.*
@@ -42,6 +43,14 @@ open class EventManager : EventBus {
 
     override fun <T : Any> dispatch(event: T): T {
         (registry[event::class] as MutableList<Listener<T>>?)?.forEach { it(event) }
+        return event
+    }
+
+    fun <T : Cancellable> dispatch(event: T): T {
+        (registry[event::class] as MutableList<Listener<T>>?)?.forEach {
+            it(event)
+            if (event.isCancelled) return@forEach
+        }
         return event
     }
 }
