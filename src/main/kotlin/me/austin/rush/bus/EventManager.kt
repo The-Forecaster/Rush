@@ -47,7 +47,7 @@ open class EventManager : EventBus {
     }
 
     fun <T : Cancellable> dispatch(event: T): T {
-        (registry[event::class] as MutableList<Listener<T>>?)?.forEach {
+        (registry[event::class] as? MutableList<Listener<T>>)?.forEach {
             it(event)
             if (event.isCancelled) return@forEach
         }
