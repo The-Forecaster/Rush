@@ -42,7 +42,7 @@ open class EventManager : EventBus {
     override fun unregister(subscriber: Any): Boolean = subscriber.listeners.map(::unregister).all()
 
     override fun <T : Any> dispatch(event: T): T {
-        (registry[event::class] as MutableList<Listener<T>>?)?.forEach { it(event) }
+        (registry[event::class] as? MutableList<Listener<T>>)?.forEach { it(event) }
         return event
     }
 
