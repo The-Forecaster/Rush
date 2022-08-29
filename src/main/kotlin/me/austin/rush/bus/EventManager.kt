@@ -20,19 +20,21 @@ open class EventManager : EventBus {
 
     private val cache = ConcurrentHashMap<Any, MutableList<Listener<*>>>()
 
-    override fun register(listener: Listener<*>) = this.registry.getOrPut(listener.target, ::CopyOnWriteArrayList).let {
-        if (it.contains(listener)) return@let false
+    override fun register(listener: Listener<*>) {
+        this.registry.getOrPut(listener.target, ::CopyOnWriteArrayList).let {
+            if (it.contains(listener)) return false
 
-        var index = 0
+            var index = 0
 
-        while (index < it.size) {
-            if (it[index].priority < listener.priority) break
+            while (index < it.size) {
+                if (it[index].priority < listener.priority) break
 
-            index++
+                index++
+            }
+
+            it.add(index, listener)
+            return true
         }
-
-        it.add(index, listener)
-        return@let true
     }
 
     override fun unregister(listener: Listener<*>) = this.registry[listener.target]?.remove(listener) ?: throw RuntimeException("This listener was never registered")
