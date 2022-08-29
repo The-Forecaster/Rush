@@ -20,7 +20,7 @@ open class EventManager : EventBus {
 
     private val cache = ConcurrentHashMap<Any, MutableList<Listener<*>>>()
 
-    override fun register(listener: Listener<*>) {
+    override fun register(listener: Listener<*>): Boolean {
         this.registry.getOrPut(listener.target, ::CopyOnWriteArrayList).let {
             if (it.contains(listener)) return false
 
