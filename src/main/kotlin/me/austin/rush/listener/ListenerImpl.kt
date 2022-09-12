@@ -3,6 +3,7 @@ package me.austin.rush.listener
 import net.jodah.typetools.TypeResolver
 import java.util.function.Consumer
 import kotlin.reflect.KClass
+import kotlin.reflect.KFunction
 
 /**
  * This is for creating listeners in Java specifically, as it uses consumers which don't have a return statement
@@ -39,9 +40,9 @@ inline fun <reified T : Any> listener(
     target: KClass<T> = T::class, priority: Int = DEFAULT, noinline action: (T) -> Unit
 ) = LambdaListener(target, priority, action)
 
-/** Implementation of Listener that uses a lambda function as its target */
+/** Implementation of [Listener] that uses a lambda function as its target */
 open class LambdaListener<T : Any> @PublishedApi internal constructor(
-    override val target: KClass<T>, override val priority: Int, internal val action: (T) -> Unit
+    override inline val target: KClass<T>, override inline val priority: Int, private inline val action: (T) -> Unit
 ) : Listener<T> {
     override operator fun invoke(param: T) = this.action(param)
 }
@@ -54,6 +55,6 @@ const val HIGH = 100
 const val HIGHEST = 200
 
 /**
- * Annotate a listener with this class to mark it for adding to the eventbus' registry
+ * Annotate a listener with this class to mark it for adding to the eventbus registry
  */
 annotation class EventHandler

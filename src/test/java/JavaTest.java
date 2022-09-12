@@ -8,7 +8,7 @@ import static me.austin.rush.listener.ListenerImplKt.listener;
 
 public class JavaTest {
     @EventHandler
-    private final Listener<String> LISTENER = listener(event -> System.out.println(event + " again!"), HIGHEST);
+    private final Listener<String> LISTENER = listener(event -> System.out.println(event + " with higher priority!"), HIGHEST);
 
     public static void main(String[] args) {
         final EventBus BUS = new EventManager();

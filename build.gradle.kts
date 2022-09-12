@@ -15,9 +15,6 @@ repositories {
 java {
     withSourcesJar()
     withJavadocJar()
-
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
 }
 
 dependencies {
@@ -41,14 +38,6 @@ dependencies {
 
 tasks {
     withType<KotlinCompile> {
-        kotlinOptions.jvmTarget = "17"
-    }
-
-    withType<JavaCompile> {
-        options.encoding = "UTF-8"
-        options.release.set(17)
-
-        sourceCompatibility = "17"
-        targetCompatibility = "17"
+        kotlinOptions.jvmTarget = "1.8"
     }
 }

@@ -17,5 +17,5 @@ fun main() {
 
 object Main {
     @EventHandler
-    val listener = listener<String>( { println("$it again!")}, priority = HIGHEST)
+    val listener = listener<String>( { println("$it with higher priority!")}, priority = HIGHEST)
 }

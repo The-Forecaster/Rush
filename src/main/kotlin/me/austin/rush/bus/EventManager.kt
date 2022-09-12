@@ -15,7 +15,6 @@ import kotlin.reflect.jvm.isAccessible
  * Basic implementation of [EventBus]
  */
 open class EventManager : EventBus {
-
     override val registry = ConcurrentHashMap<KClass<*>, MutableList<Listener<*>>>()
 
     private val cache = ConcurrentHashMap<Any, MutableList<Listener<*>>>()
