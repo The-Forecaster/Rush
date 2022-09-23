@@ -19,9 +19,9 @@ open class EventManager : EventBus {
 
     private val cache = ConcurrentHashMap<Any, MutableList<Listener<*>>>()
 
-    override fun register(listener: Listener<*>): Boolean {
+    override fun register(listener: Listener<*>) {
         this.registry.getOrPut(listener.target, ::CopyOnWriteArrayList).let {
-            if (it.contains(listener)) return false
+            if (it.contains(listener)) return
 
             var index = 0
 
@@ -32,15 +32,20 @@ open class EventManager : EventBus {
             }
 
             it.add(index, listener)
-            return true
         }
     }
 
-    override fun unregister(listener: Listener<*>) = this.registry[listener.target]?.remove(listener) ?: throw RuntimeException("This listener was never registered")
+    override fun unregister(listener: Listener<*>) {
+        this.registry[listener.target]?.remove(listener)
+    }
 
-    override fun register(subscriber: Any): Boolean = this.cache.getOrPut(subscriber, subscriber::listeners).map(::register).all()
+    override fun register(subscriber: Any) {
+        for (listener in this.cache.getOrPut(subscriber, subscriber::listeners)) this.register(listener)
+    }
 
-    override fun unregister(subscriber: Any): Boolean = subscriber.listeners.map(::unregister).all()
+    override fun unregister(subscriber: Any) {
+        for (listener in subscriber.listeners) this.unregister(listener)
+    }
 
     override fun <T : Any> dispatch(event: T): T {
         (registry[event::class] as? MutableList<Listener<T>>)?.forEach { it(event) }
@@ -49,8 +54,8 @@ open class EventManager : EventBus {
 
     fun <T : Cancellable> dispatch(event: T): T {
         (registry[event::class] as? MutableList<Listener<T>>)?.forEach {
-            it(event)
             if (event.isCancelled) return@forEach
+            it(event)
         }
         return event
     }
@@ -58,16 +63,16 @@ open class EventManager : EventBus {
 
 // Most of this is pasted from bush https://github.com/therealbush/eventbus-kotlin, check him out if you want to see actually good code
 
-private inline val KCallable<*>.isListener
+private val KCallable<*>.isListener
     get() = this.findAnnotation<EventHandler>() != null && this.returnType.isSubtypeOf(typeOf<Listener<*>>())
 
-private inline val <T : Any> KClass<T>.listeners
+private val <T : Any> KClass<T>.listeners
     get() = this.declaredMembers.filter(KCallable<*>::isListener) as List<KCallable<Listener<*>>>
 
-private inline val Any.listeners
+private val Any.listeners
     get() = this::class.listeners.map { it.handleCall(this) }.toMutableList()
 
-private inline fun <reified T : Any> KCallable<T>.handleCall(receiver: Any? = null): T {
+private fun <T : Any> KCallable<T>.handleCall(receiver: Any? = null): T {
     this.isAccessible = true
     return runCatching { call(receiver) }.getOrElse { call() }
 }

@@ -23,7 +23,7 @@ interface EventBus {
      * @param listener instance of listener<T> to subscribe
      * @return true if the listener was added, false if it was already present
      */
-    fun register(listener: Listener<*>): Boolean
+    fun register(listener: Listener<*>)
 
     /**
      * Adds all listeners to the registry
@@ -31,7 +31,9 @@ interface EventBus {
      * @param listeners all listeners you want to be added
      * @return true if all listeners were added, false if any weren't
      */
-    fun registerAll(vararg listeners: Listener<*>) = listeners.map(::register).all()
+    fun registerAll(vararg listeners: Listener<*>) {
+        for (listener in listeners) this.register(listener)
+    }
 
     /**
      * Adds all listeners in an iterable to the registry
@@ -39,7 +41,9 @@ interface EventBus {
      * @param listeners the iterable of listeners you want to be added
      * @return true if all listeners were added, false if any weren't
      */
-    fun registerAll(listeners: Iterable<Listener<*>>) = listeners.map(::register).all()
+    fun registerAll(listeners: Iterable<Listener<*>>) {
+        for (listener in listeners) this.register(listener)
+    }
 
     /**
      * Removes the listener from the registry
@@ -47,7 +51,7 @@ interface EventBus {
      * @param listener listener object to be removed
      * @return true if it was removed, false if it couldn't be removed or target isn't present in the registry
      */
-    fun unregister(listener: Listener<*>): Boolean
+    fun unregister(listener: Listener<*>)
 
     /**
      * Removes all listeners from the registry
@@ -56,7 +60,9 @@ interface EventBus {
      * @see unregister
      * @return true if all were removed, false if any could not be removed
      */
-    fun unregisterAll(vararg listeners: Listener<*>) = listeners.map(::register).all()
+    fun unregisterAll(vararg listeners: Listener<*>) {
+        for (listener in listeners) this.unregister(listener)
+    }
 
     /**
      * Removes all listeners in an iterable from the registry
@@ -65,7 +71,9 @@ interface EventBus {
      * @see unregister
      * @return true if all were removed, false if any could not be
      */
-    fun unregisterAll(listeners: Iterable<Listener<*>>) = listeners.map(::register).all()
+    fun unregisterAll(listeners: Iterable<Listener<*>>) {
+        for (listener in listeners) this.unregister(listener)
+    }
 
     /**
      * Adds all annotated listeners into the registry
@@ -73,7 +81,7 @@ interface EventBus {
      * @param subscriber object you want to be searched for listeners to be added to the registry
      * @return true if all listeners inside the class could be registered, false if any could not
      */
-    fun register(subscriber: Any): Boolean
+    fun register(subscriber: Any)
 
     /**
      * Adds all objects and their contained listeners to the registry
@@ -81,7 +89,9 @@ interface EventBus {
      * @param subscribers all subscribers you want to be added to the registry
      * @return true if all listeners inside all the objects could be registered, false if any could not
      */
-    fun registerAll(vararg subscribers: Any) = subscribers.map(::register).all()
+    fun registerAll(vararg subscribers: Any) {
+        for (subscriber in subscribers) this.register(subscriber)
+    }
 
     /**
      * Removes all annotated listeners from the registry
@@ -89,7 +99,7 @@ interface EventBus {
      * @param subscriber event subscriber instance
      * @return true if all listeners inside this object could be removed from the registry, false if any could not
      */
-    fun unregister(subscriber: Any): Boolean
+    fun unregister(subscriber: Any)
 
     /**
      * Removes all objects and their contained listeners to the registry
@@ -97,7 +107,9 @@ interface EventBus {
      * @param subscribers all subscribers you want removed from the registry
      * @return true if all listeners inside all the objects could be registered, false if any could not
      */
-    fun unregisterAll(vararg subscribers: Any) = subscribers.map(::register).all()
+    fun unregisterAll(vararg subscribers: Any) {
+        for (subscriber in subscribers) this.unregister(subscriber)
+    }
 
     /**
      * Post an event to be processed by the subscribed methods or listener objects
@@ -109,5 +121,3 @@ interface EventBus {
      */
     fun <T : Any> dispatch(event: T): T
 }
-
-internal fun Iterable<Boolean>.all() = this.all { it }
