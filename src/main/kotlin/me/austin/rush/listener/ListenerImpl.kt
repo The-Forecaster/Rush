@@ -1,9 +1,12 @@
 package me.austin.rush.listener
 
-import net.jodah.typetools.TypeResolver
+import kotlinx.coroutines.runBlocking
 import java.util.function.Consumer
 import kotlin.reflect.KClass
-import kotlin.reflect.KFunction
+import kotlin.reflect.KTypeProjection
+import kotlin.reflect.KVariance
+import kotlin.reflect.full.createType
+import kotlin.reflect.full.starProjectedType
 
 /**
  * This is for creating listeners in Java specifically, as it uses consumers which don't have a return statement
@@ -14,12 +17,10 @@ import kotlin.reflect.KFunction
  */
 @JvmOverloads
 fun <T : Any> listener(
-    action: Consumer<T>,
-    priority: Int = -50,
-    target: Class<T> = TypeResolver.resolveRawArguments(
-        Consumer::class.java,
-        action::class.java
-    )[0] as Class<T>
+    action: Consumer<T>, priority: Int = -50,
+
+    // This is a hack I found online, uses lots of bullshit so if someone sees a better way to do this I'm all ears
+    target: Class<T> = (action::class.createType(listOf(KTypeProjection(KVariance.INVARIANT, action::class.typeParameters[0].starProjectedType))).classifier as KClass<T>).java
 ) = LambdaListener(target.kotlin, priority, action::accept)
 
 /**
@@ -27,7 +28,7 @@ fun <T : Any> listener(
  *
  * @param action consumer the listeners will call when an event is posted
  */
-inline fun <reified T : Any> listener(noinline action: (T) -> Unit) = listener(T::class, -50, action)
+inline fun <reified T : Any> listener(noinline action: (T) -> Unit) = LambdaListener(T::class, -50, action)
 
 /**
  * This is for making listeners in Kotlin specifically, as it has less overhead
@@ -42,9 +43,23 @@ inline fun <reified T : Any> listener(
 
 /** Implementation of [Listener] that uses a lambda function as its target */
 open class LambdaListener<T : Any> @PublishedApi internal constructor(
-    override inline val target: KClass<T>, override inline val priority: Int, private inline val action: (T) -> Unit
+    override val target: KClass<T>, override val priority: Int, private val action: (T) -> Unit
 ) : Listener<T> {
     override operator fun invoke(param: T) = this.action(param)
+}
+
+inline fun <reified T : Any> asyncListener(noinline action: suspend (T) -> Unit) = AsyncListener(T::class, -50, action)
+
+inline fun <reified T : Any> asyncListener(
+    target: KClass<T> = T::class, priority: Int = -50, noinline action: suspend (T) -> Unit
+) = AsyncListener(target, priority, action)
+
+open class AsyncListener<T : Any> @PublishedApi internal constructor(
+    override val target: KClass<T>, override val priority: Int, private val action: suspend (T) -> Unit
+) : Listener<T> {
+    override operator fun invoke(param: T) = runBlocking {
+        action(param)
+    }
 }
 
 /**

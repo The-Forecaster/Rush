@@ -18,8 +18,6 @@ java {
 }
 
 dependencies {
-    implementation("net.jodah:typetools:0.6.3")
-
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4") {
         exclude("org.jetbrains.kotlin", "kotlin-stdlib-jdk8")
         exclude("org.jetbrains.kotlin", "kotlin-stdlib-common")
