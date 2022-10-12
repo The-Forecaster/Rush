@@ -43,6 +43,8 @@ open class LambdaListener<T : Any> @PublishedApi internal constructor(
         ) = LambdaListener(target.kotlin, priority, action::accept)
     }
 
+    constructor(action: Consumer<T>, priority: Int = -50, target: Class<T> = action.paramType) : this(target.kotlin, priority, action::accept)
+
     override operator fun invoke(param: T) = this.action(param)
 }
 
@@ -71,7 +73,6 @@ open class AsyncListener<T : Any> @PublishedApi internal constructor(
     override operator fun invoke(param: T) = runBlocking { action(param) }
 }
 
-// This is a hack I found online, uses lots of bullshit so if someone sees a better way to do this I'm all ears
 private val <T : Any> Consumer<T>.paramType
     get() = TypeResolver.resolveRawArgument(Consumer::class.java, this.javaClass) as Class<T>
 
