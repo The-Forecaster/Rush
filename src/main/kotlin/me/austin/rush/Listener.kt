@@ -1,4 +1,4 @@
-package me.austin.rush.listener
+package me.austin.rush
 
 import kotlinx.coroutines.runBlocking
 import net.jodah.typetools.TypeResolver
@@ -18,32 +18,29 @@ inline fun <reified T : Any> listener(noinline action: (T) -> Unit) = LambdaList
  *
  * @param T type the lambda will accept
  * @param action consumer the listeners will call when an event is posted
+ * @param priority the priority which this listener will be called when an event is posted
  * @param target class that the listener will listen for
  */
 inline fun <reified T : Any> listener(
-    target: KClass<T> = T::class, priority: Int = -50, noinline action: (T) -> Unit
+    noinline action: (T) -> Unit, priority: Int = -50, target: KClass<T> = T::class,
 ) = LambdaListener(target, priority, action)
 
 /** Implementation of [Listener] that uses a lambda function as its target */
 open class LambdaListener<T : Any> @PublishedApi internal constructor(
     override val target: KClass<T>, override val priority: Int, private val action: (T) -> Unit
 ) : Listener<T> {
-    companion object {
-        /**
-         * This is for creating listeners in Java specifically, as it uses consumers which don't have a return statement
-         *
-         * @param T type the consumer accepts
-         * @param action consumer the listeners will call when an event is posted
-         * @param target class that the listener will listen for
-         */
-        @JvmOverloads
-        @JvmStatic
-        fun <T : Any> listener(
-            action: Consumer<T>, priority: Int = -50, target: Class<T> = action.paramType
-        ) = LambdaListener(target.kotlin, priority, action::accept)
-    }
-
-    constructor(action: Consumer<T>, priority: Int = -50, target: Class<T> = action.paramType) : this(target.kotlin, priority, action::accept)
+    /**
+     * This is for creating listeners in Java specifically, as it uses consumers which don't have a return statement
+     *
+     * @param T type the consumer accepts
+     * @param action consumer the listeners will call when an event is posted
+     * @param priority the priority which this listener will be called when an event is posted
+     * @param target class that the listener will listen for
+     */
+    @JvmOverloads
+    constructor(action: Consumer<T>, priority: Int = -50, target: Class<T> = action.paramType) : this(
+        target.kotlin, priority, action::accept
+    )
 
     override operator fun invoke(param: T) = this.action(param)
 }
@@ -61,10 +58,11 @@ inline fun <reified T : Any> asyncListener(noinline action: suspend (T) -> Unit)
  *
  * @param T type the lambda will accept
  * @param action consumer the listeners will call when an event is posted
+ * @param priority the priority which this listener will be called when an event is posted
  * @param target class that the listener will listen for
  */
 inline fun <reified T : Any> asyncListener(
-    target: KClass<T> = T::class, priority: Int = -50, noinline action: suspend (T) -> Unit
+    noinline action: suspend (T) -> Unit, priority: Int = -50, target: KClass<T> = T::class
 ) = AsyncListener(target, priority, action)
 
 open class AsyncListener<T : Any> @PublishedApi internal constructor(
@@ -80,3 +78,24 @@ private val <T : Any> Consumer<T>.paramType
  * Annotate a listener with this class to mark it for adding to the eventbus registry
  */
 annotation class EventHandler
+
+/**
+ * Basic structure for an event listener and invoker.
+ *
+ * @author Austin
+ */
+interface Listener<T : Any> {
+
+    /** the class of the target event */
+    val target: KClass<T>
+
+    /** the priority that the listener will be called upon(use wisely) */
+    val priority: Int
+
+    /**
+     * Processes an event passed through this listener
+     *
+     * @param param event object that is being processed
+     */
+    operator fun invoke(param: T)
+}

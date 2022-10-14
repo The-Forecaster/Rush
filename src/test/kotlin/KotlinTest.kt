@@ -1,6 +1,6 @@
-import me.austin.rush.bus.EventManager
-import me.austin.rush.listener.EventHandler
-import me.austin.rush.listener.listener
+import me.austin.rush.EventManager
+import me.austin.rush.EventHandler
+import me.austin.rush.listener
 
 fun main() {
     val listener = listener<String> { println("$it!") }
@@ -14,5 +14,5 @@ fun main() {
 
 object Main {
     @EventHandler
-    val listener = listener<String>(action = { println("$it with higher priority!")}, priority = 1000)
+    val listener = listener<String>({ println("$it with higher priority!")}, 1000)
 }

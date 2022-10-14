@@ -1,15 +1,15 @@
-package me.austin.rush.bus
+package me.austin.rush
 
-import me.austin.rush.listener.EventHandler
-import me.austin.rush.listener.Listener
-import me.austin.rush.type.Cancellable
+import java.lang.Exception
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
-import kotlin.reflect.*
+import kotlin.reflect.KCallable
+import kotlin.reflect.KClass
 import kotlin.reflect.full.declaredMembers
 import kotlin.reflect.full.findAnnotation
-import kotlin.reflect.full.isSubtypeOf
+import kotlin.reflect.full.withNullability
 import kotlin.reflect.jvm.isAccessible
+import kotlin.reflect.typeOf
 
 /**
  * Basic implementation of [EventBus]
@@ -57,6 +57,7 @@ open class EventManager : EventBus {
             if (event.isCancelled) return@forEach
             it(event)
         }
+
         return event
     }
 }
@@ -64,7 +65,7 @@ open class EventManager : EventBus {
 // Most of this is pasted from bush https://github.com/therealbush/eventbus-kotlin, check him out if you want to see actually good code
 
 private val KCallable<*>.isListener
-    get() = this.findAnnotation<EventHandler>() != null && this.returnType.isSubtypeOf(typeOf<Listener<*>>())
+    get() = this.findAnnotation<EventHandler>() != null && this.returnType.withNullability(false) == typeOf<Listener<*>>()
 
 private val <T : Any> KClass<T>.listeners
     get() = this.declaredMembers.filter(KCallable<*>::isListener) as List<KCallable<Listener<*>>>
@@ -73,6 +74,13 @@ private val Any.listeners
     get() = this::class.listeners.map { it.handleCall(this) }.toMutableList()
 
 private fun <T : Any> KCallable<T>.handleCall(receiver: Any? = null): T {
+    val accessible = this.isAccessible
     this.isAccessible = true
-    return runCatching { call(receiver) }.getOrElse { call() }
+    return try {
+        call(receiver)
+    } catch(e: Exception) {
+        call()
+    } finally {
+        this.isAccessible = accessible
+    }
 }

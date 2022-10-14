@@ -1,4 +1,4 @@
-package me.austin.rush.type
+package me.austin.rush
 
 abstract class Cancellable {
     var isCancelled = false

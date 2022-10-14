@@ -1,17 +1,17 @@
-import me.austin.rush.bus.EventBus;
-import me.austin.rush.bus.EventManager;
-import me.austin.rush.listener.EventHandler;
-import me.austin.rush.listener.LambdaListener;
-import me.austin.rush.listener.Listener;
+import me.austin.rush.EventBus;
+import me.austin.rush.EventManager;
+import me.austin.rush.EventHandler;
+import me.austin.rush.LambdaListener;
+import me.austin.rush.Listener;
 
 public class JavaTest {
     @EventHandler
-    private final Listener<String> LISTENER = LambdaListener.listener(event -> System.out.println(event + " with higher priority!"), 1000);
+    private final Listener<String> LISTENER = new LambdaListener<>(event -> System.out.println(event + " with higher priority!"), 1000);
 
     public static void main(String[] args) {
         final EventBus BUS = new EventManager();
 
-        final Listener<String> LIST = LambdaListener.listener(event -> System.out.println(event + "!"));
+        final Listener<String> LIST = new LambdaListener<>(event -> System.out.println(event + "!"));
 
         BUS.register(LIST);
         BUS.register(new JavaTest());

@@ -1,6 +1,5 @@
-package me.austin.rush.bus
+package me.austin.rush
 
-import me.austin.rush.listener.Listener
 import kotlin.reflect.KClass
 
 /**

@@ -3,9 +3,10 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     java
     kotlin("jvm") version "1.7.10"
+    id("org.jetbrains.dokka") version "1.7.20"
 }
 
-version = "2.1.1"
+version = "2.2"
 group = "me.austin.rush"
 
 repositories {
@@ -25,11 +26,11 @@ dependencies {
         exclude("org.jetbrains.kotlin", "kotlin-stdlib-common")
     }
     
-    implementation("org.jetbrains.kotlin:kotlin-reflect:1.7.10") {
+    implementation("org.jetbrains.kotlin:kotlin-reflect:1.7.20") {
         exclude("org.jetbrains.kotlin", "kotlin-stdlib")
     }
 
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.7.10") {
+    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.7.20") {
         exclude("org.jetbrains.kotlin", "kotlin-stdlib-jdk7")
     }
 
@@ -37,7 +38,14 @@ dependencies {
 }
 
 tasks {
+    test {
+        testLogging.showStandardStreams = true
+        useJUnitPlatform()
+    }
     withType<KotlinCompile> {
         kotlinOptions.jvmTarget = "1.8"
+    }
+    named<Jar>("javadocJar") {
+        from(named("dokkaJavadoc"))
     }
 }
