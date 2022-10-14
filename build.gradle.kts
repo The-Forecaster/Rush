@@ -42,9 +42,9 @@ tasks {
         testLogging.showStandardStreams = true
         useJUnitPlatform()
     }
-    withType(JavaCompile::class) {
+    withType<JavaCompile> {
         options.encoding = "UTF-8"
-        options.release = 1.8
+        options.release.set(8)
     }
     
     withType<KotlinCompile> {

@@ -14,7 +14,7 @@ import kotlin.reflect.typeOf
 /**
  * Basic implementation of [EventBus]
  */
-open class EventManager : EventBus {
+open class EventManager : ListenerRegistrar, EventDispatcher {
     override val registry = ConcurrentHashMap<KClass<*>, MutableList<Listener<*>>>()
 
     private val cache = ConcurrentHashMap<Any, MutableList<Listener<*>>>()
@@ -47,9 +47,8 @@ open class EventManager : EventBus {
         for (listener in subscriber.listeners) this.unregister(listener)
     }
 
-    override fun <T : Any> dispatch(event: T): T {
+    override fun <T : Any> dispatch(event: T) {
         (registry[event::class] as? MutableList<Listener<T>>)?.forEach { it(event) }
-        return event
     }
 
     fun <T : Cancellable> dispatch(event: T): T {
