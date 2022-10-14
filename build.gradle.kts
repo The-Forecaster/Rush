@@ -42,6 +42,11 @@ tasks {
         testLogging.showStandardStreams = true
         useJUnitPlatform()
     }
+    withType(JavaCompile::class) {
+        options.encoding = "UTF-8"
+        options.release = 1.8
+    }
+    
     withType<KotlinCompile> {
         kotlinOptions.jvmTarget = "1.8"
     }
