@@ -1,4 +1,3 @@
-import me.austin.rush.EventBus;
 import me.austin.rush.EventManager;
 import me.austin.rush.EventHandler;
 import me.austin.rush.LambdaListener;
@@ -9,7 +8,7 @@ public class JavaTest {
     private final Listener<String> LISTENER = new LambdaListener<>(event -> System.out.println(event + " with higher priority!"), 1000);
 
     public static void main(String[] args) {
-        final EventBus BUS = new EventManager();
+        final EventManager BUS = new EventManager();
 
         final Listener<String> LIST = new LambdaListener<>(event -> System.out.println(event + "!"));
 
