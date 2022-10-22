@@ -35,12 +35,9 @@ open class LambdaListener<T : Any> @PublishedApi internal constructor(
      * @param T type the consumer accepts
      * @param action consumer the listeners will call when an event is posted
      * @param priority the priority which this listener will be called when an event is posted
-     * @param target class that the listener will listen for
      */
     @JvmOverloads
-    constructor(action: Consumer<T>, priority: Int = -50, target: Class<T> = action.paramType) : this(
-        target.kotlin, priority, action::accept
-    )
+    constructor(action: Consumer<T>, priority: Int = -50) : this(action.paramType.kotlin, priority, action::accept)
 
     override operator fun invoke(param: T) = this.action(param)
 }
@@ -68,6 +65,16 @@ inline fun <reified T : Any> asyncListener(
 open class AsyncListener<T : Any> @PublishedApi internal constructor(
     override val target: KClass<T>, override val priority: Int, private val action: suspend (T) -> Unit
 ) : Listener<T> {
+    /**
+     * This is for creating listeners in Java specifically, as it uses consumers which don't have a return statement
+     *
+     * @param T type the consumer accepts
+     * @param action consumer the listeners will call when an event is posted
+     * @param priority the priority which this listener will be called when an event is posted
+     */
+    @JvmOverloads
+    constructor(action: Consumer<T>, priority: Int = -50) : this(action.paramType.kotlin, priority, action::accept)
+
     override operator fun invoke(param: T) = runBlocking { action(param) }
 }
 

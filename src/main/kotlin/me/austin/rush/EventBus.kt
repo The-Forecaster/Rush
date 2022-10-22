@@ -2,7 +2,12 @@ package me.austin.rush
 
 import kotlin.reflect.KClass
 
-interface ListenerRegistrar {
+/**
+ * Basic structure for an event dispatcher
+ *
+ * @author Austin
+ */
+interface EventBus {
     /**
      * Map that will be used to store registered listeners and their targets
      *
@@ -94,14 +99,7 @@ interface ListenerRegistrar {
     fun unregisterAll(vararg subscribers: Any) {
         for (subscriber in subscribers) this.unregister(subscriber)
     }
-}
 
-/**
- * Basic structure for an event dispatcher
- *
- * @author Austin
- */
-interface EventDispatcher {
     /**
      * Post an event to be processed by the subscribed methods or listener objects
      *

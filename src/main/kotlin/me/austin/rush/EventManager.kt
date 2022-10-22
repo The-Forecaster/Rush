@@ -1,20 +1,19 @@
 package me.austin.rush
 
-import java.lang.Exception
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.reflect.KCallable
 import kotlin.reflect.KClass
 import kotlin.reflect.full.declaredMembers
 import kotlin.reflect.full.findAnnotation
-import kotlin.reflect.full.withNullability
+import kotlin.reflect.full.isSubtypeOf
 import kotlin.reflect.jvm.isAccessible
 import kotlin.reflect.typeOf
 
 /**
  * Basic implementation of [EventBus]
  */
-open class EventManager : ListenerRegistrar, EventDispatcher {
+open class EventManager : EventBus {
     override val registry = ConcurrentHashMap<KClass<*>, MutableList<Listener<*>>>()
 
     private val cache = ConcurrentHashMap<Any, MutableList<Listener<*>>>()
@@ -64,7 +63,7 @@ open class EventManager : ListenerRegistrar, EventDispatcher {
 // Most of this is pasted from bush https://github.com/therealbush/eventbus-kotlin, check him out if you want to see actually good code
 
 private val KCallable<*>.isListener
-    get() = this.findAnnotation<EventHandler>() != null && this.returnType.withNullability(false) == typeOf<Listener<*>>()
+    get() = this.findAnnotation<EventHandler>() != null && this.returnType.isSubtypeOf(typeOf<Listener<*>>())
 
 private val <T : Any> KClass<T>.listeners
     get() = this.declaredMembers.filter(KCallable<*>::isListener) as List<KCallable<Listener<*>>>
@@ -75,11 +74,7 @@ private val Any.listeners
 private fun <T : Any> KCallable<T>.handleCall(receiver: Any? = null): T {
     val accessible = this.isAccessible
     this.isAccessible = true
-    return try {
-        call(receiver)
-    } catch(e: Exception) {
-        call()
-    } finally {
-        this.isAccessible = accessible
-    }
+
+    // This will get a both static and non-static listeners in the jvm
+    return try { call(receiver) } catch(e: Throwable) { call() } finally { this.isAccessible = accessible }
 }
