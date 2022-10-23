@@ -47,13 +47,17 @@ open class EventManager : EventBus {
     }
 
     override fun <T : Any> dispatch(event: T) {
-        (registry[event::class] as? MutableList<Listener<T>>)?.forEach { it(event) }
+        (registry[event::class] as? MutableList<Listener<T>>)?.let { synchronized(it) { it.forEach { it(event) } } }
     }
 
     fun <T : Cancellable> dispatch(event: T): T {
-        (registry[event::class] as? MutableList<Listener<T>>)?.forEach {
-            if (event.isCancelled) return@forEach
-            it(event)
+        (registry[event::class] as? MutableList<Listener<T>>)?.let {
+            synchronized(it) {
+                it.forEach {
+                    if (event.isCancelled) return@forEach
+                    it(event)
+                }
+            }
         }
 
         return event
