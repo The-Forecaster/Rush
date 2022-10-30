@@ -50,7 +50,7 @@ open class EventManager : EventBus {
     }
 
     override fun <T : Any> dispatch(event: T) {
-        (registry[event::class] as? MutableList<Listener<T>>)?.let { synchronized(it) { it.forEach { it(event) } } }
+        (registry[event::class] as? MutableList<Listener<T>>)?.let { synchronized(it) { for (listener in it) listener(event) } }
     }
 
     fun <T : Cancellable> dispatch(event: T): T {
@@ -73,10 +73,10 @@ private val KCallable<*>.isListener
     get() = this.findAnnotation<EventHandler>() != null && this.returnType.isSubtypeOf(typeOf<Listener<*>>())
 
 private val <T : Any> KClass<T>.listeners
-    get() = this.declaredMembers.filter(KCallable<*>::isListener) as List<KCallable<Listener<*>>>
+    get() = this.declaredMembers.filterTo(ArrayList(), KCallable<*>::isListener) as List<KCallable<Listener<*>>>
 
 private val Any.listeners
-    get() = this::class.listeners.mapTo(mutableListOf()) { it.handleCall(this) }
+    get() = this::class.listeners.mapTo(ArrayList()) { it.handleCall(this) }
 
 private fun <T : Any> KCallable<T>.handleCall(receiver: Any? = null): T {
     val accessible = this.isAccessible
@@ -146,16 +146,6 @@ inline fun <reified T : Any> asyncListener(
 open class AsyncListener<T : Any> @PublishedApi internal constructor(
     override val target: KClass<T>, override val priority: Int, private val action: suspend (T) -> Unit
 ) : Listener<T> {
-    /**
-     * This is for creating listeners in Java specifically, as it uses consumers which don't have a return statement
-     *
-     * @param T type the consumer accepts
-     * @param action consumer the listeners will call when an event is posted
-     * @param priority the priority which this listener will be called when an event is posted
-     */
-    @JvmOverloads
-    constructor(action: Consumer<T>, priority: Int = -50) : this(action.paramType.kotlin, priority, action::accept)
-
     override operator fun invoke(param: T) = runBlocking { action(param) }
 }
 
