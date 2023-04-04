@@ -1,7 +1,7 @@
 package me.austin.rush
 
 import kotlinx.coroutines.runBlocking
-import net.jodah.typetools.TypeResolver
+import java.lang.Class
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.function.Consumer
@@ -118,7 +118,7 @@ open class LambdaListener<T : Any> @PublishedApi internal constructor(
      * @param priority the priority which this listener will be called when an event is posted
      */
     @JvmOverloads
-    constructor(action: Consumer<T>, priority: Int = -50) : this(action.paramType.kotlin, priority, action::accept)
+    constructor(action: Consumer<T>, priority: Int = -50, type: Class<T>) : this(type.kotlin, priority, action::accept)
 
     override operator fun invoke(param: T) = this.action(param)
 }
@@ -148,9 +148,6 @@ open class AsyncListener<T : Any> @PublishedApi internal constructor(
 ) : Listener<T> {
     override operator fun invoke(param: T) = runBlocking { action(param) }
 }
-
-private val <T : Any> Consumer<T>.paramType
-    get() = TypeResolver.resolveRawArgument(Consumer::class.java, this.javaClass) as Class<T>
 
 /**
  * Annotate a listener with this class to mark it for adding to the eventbus registry
