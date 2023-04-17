@@ -16,7 +16,7 @@ open class EventManager : EventBus {
     override val registry = ConcurrentHashMap<KClass<*>, MutableList<Listener<*>>>()
 
     // Using this here, so we don't have to make more reflection calls
-    private val cache = ConcurrentHashMap<Any, MutableList<Listener<*>>>()
+    private val cache = ConcurrentHashMap<Any, List<Listener<*>>>()
 
     override fun register(listener: Listener<*>) {
         this.registry.getOrPut(listener.target, ::CopyOnWriteArrayList).let {
@@ -64,6 +64,7 @@ open class EventManager : EventBus {
      * @return the event passed through
      */
     fun <T : Cancellable> dispatch(event: T): T {
+        // Nullable cast in case the event doesn't have any listeners
         (registry[event::class] as? MutableList<Listener<T>>)?.let {
             synchronized(it) {
                 for (listener in it) {
