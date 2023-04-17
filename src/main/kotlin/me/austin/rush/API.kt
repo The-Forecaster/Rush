@@ -37,7 +37,7 @@ interface EventBus {
      *
      * @param listeners the iterable of listeners you want to be added
      */
-    fun registerAll(listeners: Iterable<Listener<*>>) {
+    fun registerAll(listeners: Collection<Listener<*>>) {
         for (listener in listeners) this.register(listener)
     }
 
@@ -64,7 +64,7 @@ interface EventBus {
      * @param listeners iterable of listeners you want to be removed
      * @see unregister
      */
-    fun unregisterAll(listeners: Iterable<Listener<*>>) {
+    fun unregisterAll(listeners: Collection<Listener<*>>) {
         for (listener in listeners) this.unregister(listener)
     }
 
@@ -106,7 +106,6 @@ interface EventBus {
      * @param <T> event type
      * @param event object to post
      *
-     * @return the event you passed
      */
     fun <T : Any> dispatch(event: T)
 }
@@ -117,7 +116,6 @@ interface EventBus {
  * @author Austin
  */
 interface Listener<T : Any> {
-
     /** the class of the target event */
     val target: KClass<T>
 
@@ -132,9 +130,18 @@ interface Listener<T : Any> {
     operator fun invoke(param: T)
 }
 
+/**
+ * Framework for a cancellable event
+ * 
+ * @author Austin
+ */
 abstract class Cancellable {
     var isCancelled = false
+        private set
 
+    /**
+     * Use this function to set isCancelled to true
+     */
     fun cancel() {
         this.isCancelled = true
     }

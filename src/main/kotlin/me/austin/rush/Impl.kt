@@ -1,15 +1,11 @@
 package me.austin.rush
 
 import kotlinx.coroutines.runBlocking
-import java.lang.Class
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
-import java.util.function.Consumer
 import kotlin.reflect.KCallable
 import kotlin.reflect.KClass
-import kotlin.reflect.full.declaredMembers
-import kotlin.reflect.full.findAnnotation
-import kotlin.reflect.full.isSubtypeOf
+import kotlin.reflect.full.*
 import kotlin.reflect.jvm.isAccessible
 import kotlin.reflect.typeOf
 
@@ -19,10 +15,12 @@ import kotlin.reflect.typeOf
 open class EventManager : EventBus {
     override val registry = ConcurrentHashMap<KClass<*>, MutableList<Listener<*>>>()
 
+    // Using this here, so we don't have to make more reflection calls
     private val cache = ConcurrentHashMap<Any, MutableList<Listener<*>>>()
 
     override fun register(listener: Listener<*>) {
         this.registry.getOrPut(listener.target, ::CopyOnWriteArrayList).let {
+            // For if a listener is already registered
             if (it.contains(listener)) return
 
             var index = 0
@@ -50,9 +48,21 @@ open class EventManager : EventBus {
     }
 
     override fun <T : Any> dispatch(event: T) {
-        (registry[event::class] as? MutableList<Listener<T>>)?.let { synchronized(it) { for (listener in it) listener(event) } }
+        // Nullable cast in case the event doesn't have any listeners
+        (registry[event::class] as? MutableList<Listener<T>>)?.let {
+            synchronized(it) {
+                for (listener in it) listener(event)
+            }
+        }
     }
 
+    /**
+     * Dispatches an event that is cancellable. 
+     * When the event is cancelled it will not be posted to any listeners after
+     * 
+     * @param event the event which will be posted
+     * @return the event passed through
+     */
     fun <T : Cancellable> dispatch(event: T): T {
         (registry[event::class] as? MutableList<Listener<T>>)?.let {
             synchronized(it) {
@@ -67,13 +77,14 @@ open class EventManager : EventBus {
     }
 }
 
-// Most of this is pasted from bush https://github.com/therealbush/eventbus-kotlin, check him out if you want to see actually good code
+// Most of this is pasted or inspired from bush https://github.com/therealbush/eventbus-kotlin, check him out if you want to see actually good code
 
 private val KCallable<*>.isListener
-    get() = this.findAnnotation<EventHandler>() != null && this.returnType.isSubtypeOf(typeOf<Listener<*>>())
+    get() = this.hasAnnotation<EventHandler>() && this.returnType.withNullability(false).isSubtypeOf(typeOf<Listener<*>>())
 
 private val <T : Any> KClass<T>.listeners
-    get() = this.declaredMembers.filterTo(ArrayList(), KCallable<*>::isListener) as List<KCallable<Listener<*>>>
+    // This cast will never fail
+    get() = this.declaredMembers.filter(KCallable<*>::isListener) as List<KCallable<Listener<*>>>
 
 private val Any.listeners
     get() = this::class.listeners.mapTo(ArrayList()) { it.handleCall(this) }
@@ -82,17 +93,9 @@ private fun <T : Any> KCallable<T>.handleCall(receiver: Any? = null): T {
     val accessible = this.isAccessible
     this.isAccessible = true
 
-    // This will get a both static and non-static listeners in the jvm
+    // Cool hack to get both static and non-static listeners in the jvm
     return try { call(receiver) } catch (e: Throwable) { call() } finally { this.isAccessible = accessible }
 }
-
-/**
- * This is for making simple, non-verbose listeners
- *
- * @param T type the lambda will accept
- * @param action consumer the listeners will call when an event is posted
- */
-inline fun <reified T : Any> listener(noinline action: (T) -> Unit) = LambdaListener(T::class, -50, action)
 
 /**
  * This is for making listeners in Kotlin specifically, as it has less overhead
@@ -110,16 +113,6 @@ inline fun <reified T : Any> listener(
 open class LambdaListener<T : Any> @PublishedApi internal constructor(
     override val target: KClass<T>, override val priority: Int, private val action: (T) -> Unit
 ) : Listener<T> {
-    /**
-     * This is for creating listeners in Java specifically, as it uses consumers which don't have a return statement
-     *
-     * @param T type the consumer accepts
-     * @param action consumer the listeners will call when an event is posted
-     * @param priority the priority which this listener will be called when an event is posted
-     */
-    @JvmOverloads
-    constructor(action: Consumer<T>, priority: Int = -50, type: Class<T>) : this(type.kotlin, priority, action::accept)
-
     override operator fun invoke(param: T) = this.action(param)
 }
 
