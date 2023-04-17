@@ -4,7 +4,7 @@ import me.austin.rush.EventHandler
 import me.austin.rush.listener
 
 fun main() {
-    val listener = listener<String> { println("$it!") }
+    val listener = listener<String>({ println("$it!") })
 
     with(EventManager()) {
         register(listener)

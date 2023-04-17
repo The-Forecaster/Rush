@@ -3,6 +3,7 @@ package me.austin.rush
 import kotlinx.coroutines.runBlocking
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.function.Consumer
 import kotlin.reflect.KCallable
 import kotlin.reflect.KClass
 import kotlin.reflect.full.*
@@ -114,6 +115,9 @@ inline fun <reified T : Any> listener(
 open class LambdaListener<T : Any> @PublishedApi internal constructor(
     override val target: KClass<T>, override val priority: Int, private val action: (T) -> Unit
 ) : Listener<T> {
+    @JvmOverloads
+    constructor(action: Consumer<T>, priority: Int = -50, target: Class<T>) : this(target.kotlin, priority, action::accept)
+
     override operator fun invoke(param: T) = this.action(param)
 }
 

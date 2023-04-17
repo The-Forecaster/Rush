@@ -5,12 +5,12 @@ import me.austin.rush.Listener;
 
 public class JavaTest {
     @EventHandler
-    private final Listener<String> LISTENER = new LambdaListener<String>(event -> System.out.println(event + " with higher priority!"), 1000, String.class);
+    private final Listener<String> LISTENER = new LambdaListener<>(event -> System.out.println(event + " with higher priority!"), 1000, String.class);
 
     public static void main(String[] args) {
         final EventManager BUS = new EventManager();
 
-        final Listener<String> LIST = new LambdaListener<String>(event -> System.out.println(event + "!"), String.class);
+        final Listener<String> LIST = new LambdaListener<>(event -> System.out.println(event + "!"), String.class);
 
         BUS.register(LIST);
         BUS.register(new JavaTest());
