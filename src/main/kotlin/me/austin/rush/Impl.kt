@@ -58,9 +58,9 @@ open class EventManager : EventBus {
     }
 
     /**
-     * Dispatches an event that is cancellable. 
+     * Dispatches an event that is cancellable.
      * When the event is cancelled it will not be posted to any listeners after
-     * 
+     *
      * @param event the event which will be posted
      * @return the event passed through
      */
@@ -82,7 +82,8 @@ open class EventManager : EventBus {
 // Most of this is pasted or inspired from bush https://github.com/therealbush/eventbus-kotlin, check him out if you want to see actually good code
 
 private val KCallable<*>.isListener: Boolean
-    get() = this.hasAnnotation<EventHandler>() && this.returnType.withNullability(false).isSubtypeOf(typeOf<Listener<*>>())
+    get() = this.hasAnnotation<EventHandler>() && this.returnType.withNullability(false)
+        .isSubtypeOf(typeOf<Listener<*>>())
 
 private val <T : Any> KClass<T>.listeners: List<KCallable<Listener<*>>>
     // This cast will never fail
@@ -96,7 +97,13 @@ private fun <T : Any> KCallable<T>.handleCall(receiver: Any? = null): T {
     this.isAccessible = true
 
     // Cool hack to get both static and non-static listeners in the jvm
-    return try { call(receiver) } catch (e: Throwable) { call() } finally { this.isAccessible = accessible }
+    return try {
+        call(receiver)
+    } catch (e: Throwable) {
+        call()
+    } finally {
+        this.isAccessible = accessible
+    }
 }
 
 /**
@@ -113,10 +120,14 @@ inline fun <reified T : Any> listener(
 
 /** Implementation of [Listener] that uses a lambda function as its target */
 open class LambdaListener<T : Any> @PublishedApi internal constructor(
-    override val target: KClass<T>, override val priority: Int, private val action: (T) -> Unit
+    override val target: KClass<T>, override val priority: Int, protected val action: (T) -> Unit
 ) : Listener<T> {
     @JvmOverloads
-    constructor(action: Consumer<T>, priority: Int = -50, target: Class<T>) : this(target.kotlin, priority, action::accept)
+    constructor(action: Consumer<T>, priority: Int = -50, target: Class<T>) : this(
+        target.kotlin,
+        priority,
+        action::accept
+    )
 
     override operator fun invoke(param: T) = this.action(param)
 }
@@ -142,7 +153,7 @@ inline fun <reified T : Any> asyncListener(
 ) = AsyncListener(target, priority, action)
 
 open class AsyncListener<T : Any> @PublishedApi internal constructor(
-    override val target: KClass<T>, override val priority: Int, private val action: suspend (T) -> Unit
+    override val target: KClass<T>, override val priority: Int, protected val action: suspend (T) -> Unit
 ) : Listener<T> {
     override operator fun invoke(param: T) = runBlocking { action(param) }
 }

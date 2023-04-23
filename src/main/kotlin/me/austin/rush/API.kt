@@ -132,7 +132,7 @@ interface Listener<T : Any> {
 
 /**
  * Framework for a cancellable event
- * 
+ *
  * @author Austin
  */
 abstract class Cancellable {
