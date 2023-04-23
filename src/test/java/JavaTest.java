@@ -1,5 +1,5 @@
-import me.austin.rush.EventManager;
 import me.austin.rush.EventHandler;
+import me.austin.rush.EventManager;
 import me.austin.rush.LambdaListener;
 import me.austin.rush.Listener;
 

@@ -81,15 +81,15 @@ open class EventManager : EventBus {
 
 // Most of this is pasted or inspired from bush https://github.com/therealbush/eventbus-kotlin, check him out if you want to see actually good code
 
-private val KCallable<*>.isListener
+private val KCallable<*>.isListener: Boolean
     get() = this.hasAnnotation<EventHandler>() && this.returnType.withNullability(false).isSubtypeOf(typeOf<Listener<*>>())
 
-private val <T : Any> KClass<T>.listeners
+private val <T : Any> KClass<T>.listeners: List<KCallable<Listener<*>>>
     // This cast will never fail
-    get() = this.declaredMembers.filter(KCallable<*>::isListener) as List<KCallable<Listener<*>>>
+    get() = (this.superclasses.flatMap { it.declaredMembers } + declaredMembers).filter(KCallable<*>::isListener) as List<KCallable<Listener<*>>>
 
-private val Any.listeners
-    get() = this::class.listeners.mapTo(ArrayList()) { it.handleCall(this) }
+private val Any.listeners: List<Listener<*>>
+    get() = this::class.listeners.map { it.handleCall(this) }
 
 private fun <T : Any> KCallable<T>.handleCall(receiver: Any? = null): T {
     val accessible = this.isAccessible

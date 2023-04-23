@@ -11,26 +11,33 @@ repositories {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4") {
-        exclude("org.jetbrains.kotlin", "kotlin-stdlib-jdk8")
-        exclude("org.jetbrains.kotlin", "kotlin-stdlib-common")
-    }
-    
-    implementation("org.jetbrains.kotlin:kotlin-reflect:1.8.20") {
-        exclude("org.jetbrains.kotlin", "kotlin-stdlib")
+    testImplementation(kotlin(module = "test"))
+
+    implementation(group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version = "1.6.4") {
+        exclude(module = "kotlin-stdlib-jdk8")
+        exclude(module = "kotlin-stdlib-common")
     }
 
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.20") {
-        exclude("org.jetbrains.kotlin", "kotlin-stdlib-jdk7")
+    implementation(group = "org.jetbrains.kotlin", name = "kotlin-reflect", version = "1.8.20") {
+        exclude(module = "kotlin-stdlib")
     }
 
-    testImplementation(kotlin("test"))
+    implementation(group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version = "1.8.20") {
+        exclude(module = "annotations")
+        exclude(module = "kotlin-stdlib-common")
+    }
 
-    compileOnly("org.jetbrains:annotations:24.0.1")
+    compileOnly(group = "org.jetbrains", name = "annotations", version = "24.0.1")
+}
+
+java {
+    withSourcesJar()
+    withJavadocJar()
 }
 
 tasks {
     test {
+        testLogging.showStandardStreams = true
         useJUnitPlatform()
     }
 }
