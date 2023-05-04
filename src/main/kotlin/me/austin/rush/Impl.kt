@@ -1,6 +1,8 @@
 package me.austin.rush
 
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.function.Consumer
@@ -9,6 +11,11 @@ import kotlin.reflect.KClass
 import kotlin.reflect.full.*
 import kotlin.reflect.jvm.isAccessible
 import kotlin.reflect.typeOf
+
+/**
+ * Annotate a listener with this class to mark it for adding to the eventbus registry
+ */
+annotation class EventHandler
 
 /**
  * Basic implementation of [EventBus]
@@ -90,33 +97,14 @@ private val <T : Any> KClass<T>.listeners: List<KCallable<Listener<*>>>
     get() = (this.superclasses.flatMap { it.declaredMembers } + declaredMembers).filter(KCallable<*>::isListener) as List<KCallable<Listener<*>>>
 
 private val Any.listeners: List<Listener<*>>
-    get() = this::class.listeners.map { it.handleCall(this) }
+    get() = this::class.listeners.mapTo(ArrayList()) { it.handleCall(this) }
 
 private fun <T : Any> KCallable<T>.handleCall(receiver: Any? = null): T {
     val accessible = this.isAccessible
     this.isAccessible = true
 
-    // Cool hack to get both static and non-static listeners in the jvm
-    return try {
-        call(receiver)
-    } catch (e: Throwable) {
-        call()
-    } finally {
-        this.isAccessible = accessible
-    }
+    return try { call(receiver) } catch (e: Throwable) { call() } finally { this.isAccessible = accessible }
 }
-
-/**
- * This is for making listeners in Kotlin specifically, as it has less overhead
- *
- * @param T type the lambda will accept
- * @param action consumer the listeners will call when an event is posted
- * @param priority the priority which this listener will be called when an event is posted
- * @param target class that the listener will listen for
- */
-inline fun <reified T : Any> listener(
-    noinline action: (T) -> Unit, priority: Int = -50, target: KClass<T> = T::class,
-) = LambdaListener(target, priority, action)
 
 /** Implementation of [Listener] that uses a lambda function as its target */
 open class LambdaListener<T : Any> @PublishedApi internal constructor(
@@ -124,21 +112,38 @@ open class LambdaListener<T : Any> @PublishedApi internal constructor(
 ) : Listener<T> {
     @JvmOverloads
     constructor(action: Consumer<T>, priority: Int = -50, target: Class<T>) : this(
-        target.kotlin,
-        priority,
-        action::accept
+        target.kotlin, priority, action::accept
     )
 
-    override operator fun invoke(param: T) = this.action(param)
+    override operator fun invoke(param: T) {
+        this.action(param)
+    }
 }
 
 /**
- * Use this to make listeners that can use async/await functions
+ * This is for making listeners in Kotlin
  *
- * @param T the type the consumer accepts
- * @param action the consumer that will be called on an event posting
+ * @param T type the lambda will accept
+ * @param action consumer the listeners will call when an event is posted
+ * @param priority the priority which this listener will be called when an event is posted
+ * @param target class that the listener will listen for
+ *
+ * @return [LambdaListener] with the action
  */
-inline fun <reified T : Any> asyncListener(noinline action: suspend (T) -> Unit) = AsyncListener(T::class, -50, action)
+inline fun <reified T : Any> listener(
+    noinline action: (T) -> Unit, priority: Int = -50, target: KClass<T> = T::class,
+) = LambdaListener(target, priority, action)
+
+private val scope = CoroutineScope(Dispatchers.Default)
+
+/** Implementation of [Listener] that uses an async/await function as its action */
+open class AsyncListener<T : Any> @PublishedApi internal constructor(
+    override val target: KClass<T>, override val priority: Int, protected val action: suspend (T) -> Unit
+) : Listener<T> {
+    override operator fun invoke(param: T) {
+        scope.launch { action(param) }
+    }
+}
 
 /**
  * This is for making listeners that can use async/await functions
@@ -147,18 +152,9 @@ inline fun <reified T : Any> asyncListener(noinline action: suspend (T) -> Unit)
  * @param action consumer the listeners will call when an event is posted
  * @param priority the priority which this listener will be called when an event is posted
  * @param target class that the listener will listen for
+ *
+ * @return [AsyncListener] with the action
  */
 inline fun <reified T : Any> asyncListener(
     noinline action: suspend (T) -> Unit, priority: Int = -50, target: KClass<T> = T::class
 ) = AsyncListener(target, priority, action)
-
-open class AsyncListener<T : Any> @PublishedApi internal constructor(
-    override val target: KClass<T>, override val priority: Int, protected val action: suspend (T) -> Unit
-) : Listener<T> {
-    override operator fun invoke(param: T) = runBlocking { action(param) }
-}
-
-/**
- * Annotate a listener with this class to mark it for adding to the eventbus registry
- */
-annotation class EventHandler
