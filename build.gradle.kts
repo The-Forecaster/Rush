@@ -25,12 +25,6 @@ dependencies {
         isTransitive = false
     }
 
-    implementation(group = "org.jetbrains.kotlin", name = "kotlin-stdlib", version = "1.8.20") {
-        exclude(module = "annotations")
-        exclude(module = "kotlin-stdlib-common")
-        isTransitive = false
-    }
-
     compileOnly(group = "org.jetbrains", name = "annotations", version = "24.0.1")
 }
 
