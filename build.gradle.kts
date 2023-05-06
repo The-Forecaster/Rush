@@ -24,8 +24,6 @@ dependencies {
         exclude(module = "kotlin-stdlib")
         isTransitive = false
     }
-
-    compileOnly(group = "org.jetbrains", name = "annotations", version = "24.0.1")
 }
 
 java {
