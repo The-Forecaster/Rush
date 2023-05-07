@@ -1,8 +1,20 @@
 import kotlinx.coroutines.delay
-import me.austin.rush.*
+import me.austin.rush.EventHandler
+import me.austin.rush.EventManager
+import me.austin.rush.asyncListener
+import me.austin.rush.listener
 import org.junit.jupiter.api.Test
 
 class KotlinTest {
+    @EventHandler
+    val listener = listener<String>({ println("$it with higher priority!") }, 1000)
+
+    @EventHandler
+    val async = asyncListener<String>({
+        delay(1000)
+        println("$it that's delayed!")
+    })
+
     @Test
     fun test() {
         val listener = listener<String>({ println("$it!") })
@@ -14,22 +26,8 @@ class KotlinTest {
 
         with(EventManager()) {
             registerAll(listener, async)
-            register(Main)
+            register(KotlinTest())
             dispatch("I just posted an event")
-            dispatch(TestEvent())
         }
     }
 }
-
-object Main {
-    @EventHandler
-    val listener = listener<String>({ println("$it with higher priority!") }, 1000)
-
-    @EventHandler
-    val async = asyncListener<String>({
-        delay(1000)
-        println("$it that's delayed!")
-    })
-}
-
-class TestEvent : Cancellable()
