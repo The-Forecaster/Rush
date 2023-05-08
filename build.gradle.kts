@@ -8,13 +8,14 @@ version = "2.2"
 group = "me.austin"
 
 dependencies {
-    testImplementation(kotlin(module = "test"))
-
-    testImplementation(group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version = "1.7.0-RC")
-
-    testImplementation(project(":eventbus"))
-
-    testImplementation(project(":lightweight"))
+    for (any in listOf(
+        kotlin(module = "test"),
+        "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.0-RC",
+        project(path = ":eventbus"),
+        project(path = ":lightweight"),
+    )) {
+        testImplementation(any)
+    }
 }
 
 tasks {
