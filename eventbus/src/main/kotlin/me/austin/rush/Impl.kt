@@ -14,19 +14,25 @@ import kotlin.reflect.typeOf
 
 /**
  * Annotate a listener with this class to mark it for adding to the eventbus registry
+ *
+ * @author Austin
+ * @since 2022
  */
 annotation class EventHandler
 
 /**
  * Basic implementation of [IEventBus]
+ *
+ * @author Austin
+ * @since 2022
  */
 open class EventBus : IEventBus {
-    override val registry = ConcurrentHashMap<KClass<*>, MutableList<Listener<*>>>()
+    override val registry = ConcurrentHashMap<KClass<*>, MutableList<IListener<*>>>()
 
     // Using this here, so we don't have to make more reflection calls
-    private val cache = ConcurrentHashMap<Any, List<Listener<*>>>()
+    private val cache = ConcurrentHashMap<Any, List<IListener<*>>>()
 
-    override fun register(listener: Listener<*>) {
+    override fun register(listener: IListener<*>) {
         this.registry.getOrPut(listener.target, ::CopyOnWriteArrayList).let {
             // For if a listener is already registered
             if (it.contains(listener)) return
@@ -43,7 +49,7 @@ open class EventBus : IEventBus {
         }
     }
 
-    override fun unregister(listener: Listener<*>) {
+    override fun unregister(listener: IListener<*>) {
         this.registry[listener.target]?.remove(listener)
     }
 
@@ -57,7 +63,7 @@ open class EventBus : IEventBus {
 
     override fun <T : Any> dispatch(event: T) {
         // Nullable cast in case the event doesn't have any listeners
-        (registry[event::class] as? MutableList<Listener<T>>)?.let {
+        (registry[event::class] as? MutableList<IListener<T>>)?.let {
             synchronized(it) {
                 for (listener in it) listener(event)
             }
@@ -73,7 +79,8 @@ open class EventBus : IEventBus {
      */
     fun <T : Cancellable> dispatch(event: T): T {
         // Nullable cast in case the event doesn't have any listeners
-        (registry[event::class] as? MutableList<Listener<T>>)?.let {
+        (registry[event::class] as? MutableList<IListener<T>>)?.let {
+            // This could cause some problems, but we probably want this for thread-safety
             synchronized(it) {
                 for (listener in it) {
                     listener(event)
@@ -90,14 +97,14 @@ open class EventBus : IEventBus {
 
 private val KCallable<*>.isListener: Boolean
     get() = this.hasAnnotation<EventHandler>() && this.returnType.withNullability(false)
-        .isSubtypeOf(typeOf<Listener<*>>())
+        .isSubtypeOf(typeOf<IListener<*>>())
 
-private val <T : Any> KClass<T>.listeners: List<KCallable<Listener<*>>>
+private val <T : Any> KClass<T>.listeners: List<KCallable<IListener<*>>>
     // This cast will never fail
-    get() = (this.superclasses.flatMap { it.declaredMembers } + declaredMembers).filter(KCallable<*>::isListener) as List<KCallable<Listener<*>>>
+    get() = (this.superclasses.flatMap { it.declaredMembers } + declaredMembers).filter(KCallable<*>::isListener) as List<KCallable<IListener<*>>>
 
-private val Any.listeners: List<Listener<*>>
-    get() = this::class.listeners.mapTo(ArrayList()) { it.handleCall(this) }
+private val Any.listeners: List<IListener<*>>
+    get() = this::class.listeners.mapTo(ArrayList()) { it.handleCall(this) }.toList()
 
 private fun <T : Any> KCallable<T>.handleCall(receiver: Any? = null): T {
     val accessible = this.isAccessible
@@ -106,10 +113,10 @@ private fun <T : Any> KCallable<T>.handleCall(receiver: Any? = null): T {
     return try { call(receiver) } catch (e: Throwable) { call() } finally { this.isAccessible = accessible }
 }
 
-/** Implementation of [Listener] that uses a lambda function as its target */
+/** Implementation of [IListener] that uses a lambda function as its target */
 open class LambdaListener<T : Any> @PublishedApi internal constructor(
     override val target: KClass<T>, override val priority: Int, protected val action: (T) -> Unit
-) : Listener<T> {
+) : IListener<T> {
     @JvmOverloads
     constructor(action: Consumer<T>, priority: Int = -50, target: Class<T>) : this(
         target.kotlin, priority, action::accept
@@ -136,10 +143,10 @@ inline fun <reified T : Any> listener(
 
 private val scope = CoroutineScope(Dispatchers.Default)
 
-/** Implementation of [Listener] that uses an async/await function as its action */
+/** Implementation of [IListener] that uses an async/await function as its action */
 open class AsyncListener<T : Any> @PublishedApi internal constructor(
     override val target: KClass<T>, override val priority: Int, protected val action: suspend (T) -> Unit
-) : Listener<T> {
+) : IListener<T> {
     override operator fun invoke(param: T) {
         scope.launch { action(param) }
     }

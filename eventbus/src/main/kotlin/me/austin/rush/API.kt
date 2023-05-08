@@ -6,8 +6,9 @@ import kotlin.reflect.KClass
  * Basic structure for an event listener and invoker.
  *
  * @author Austin
+ * @since 2022
  */
-interface Listener<T : Any> {
+interface IListener<T : Any> {
     /** the class of the target event */
     val target: KClass<T>
 
@@ -26,6 +27,7 @@ interface Listener<T : Any> {
  * Basic structure for an event dispatcher
  *
  * @author Austin
+ * @since 2022
  */
 interface IEventBus {
     /**
@@ -34,21 +36,21 @@ interface IEventBus {
      * The key-set will hold all stored targets of listeners
      * The value-set will hold the list of listeners corresponding to their respective targets
      */
-    val registry: MutableMap<KClass<*>, MutableList<Listener<*>>>
+    val registry: MutableMap<KClass<*>, MutableList<IListener<*>>>
 
     /**
      * Adds the listener into the registry
      *
      * @param listener instance of listener<T> to subscribe
      */
-    fun register(listener: Listener<*>)
+    fun register(listener: IListener<*>)
 
     /**
      * Adds all listeners to the registry
      *
      * @param listeners all listeners you want to be added
      */
-    fun registerAll(vararg listeners: Listener<*>) {
+    fun registerAll(vararg listeners: IListener<*>) {
         for (listener in listeners) this.register(listener)
     }
 
@@ -57,7 +59,7 @@ interface IEventBus {
      *
      * @param listeners the iterable of listeners you want to be added
      */
-    fun registerAll(listeners: Collection<Listener<*>>) {
+    fun registerAll(listeners: Iterable<IListener<*>>) {
         for (listener in listeners) this.register(listener)
     }
 
@@ -66,7 +68,7 @@ interface IEventBus {
      *
      * @param listener listener object to be removed
      */
-    fun unregister(listener: Listener<*>)
+    fun unregister(listener: IListener<*>)
 
     /**
      * Removes all listeners from the registry
@@ -74,7 +76,7 @@ interface IEventBus {
      * @param listeners listener objects you want to be removed
      * @see unregister
      */
-    fun unregisterAll(vararg listeners: Listener<*>) {
+    fun unregisterAll(vararg listeners: IListener<*>) {
         for (listener in listeners) this.unregister(listener)
     }
 
@@ -84,7 +86,7 @@ interface IEventBus {
      * @param listeners iterable of listeners you want to be removed
      * @see unregister
      */
-    fun unregisterAll(listeners: Collection<Listener<*>>) {
+    fun unregisterAll(listeners: Iterable<IListener<*>>) {
         for (listener in listeners) this.unregister(listener)
     }
 
@@ -134,6 +136,7 @@ interface IEventBus {
  * Framework for a cancellable event
  *
  * @author Austin
+ * @since 2022
  */
 abstract class Cancellable {
     var isCancelled = false

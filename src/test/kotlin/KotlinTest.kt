@@ -1,6 +1,6 @@
 import kotlinx.coroutines.delay
-import me.austin.rush.EventHandler
 import me.austin.rush.EventBus
+import me.austin.rush.EventHandler
 import me.austin.rush.asyncListener
 import me.austin.rush.listener
 import org.junit.jupiter.api.Test

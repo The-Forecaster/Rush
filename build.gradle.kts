@@ -1,11 +1,16 @@
+allprojects {
+    group = "me.austin"
+    version = "0.2.2"
+}
+
 plugins {
     java
     kotlin("jvm") version "1.8.20"
-    id("org.jetbrains.dokka") version "1.8.10"
 }
 
-version = "2.2"
-group = "me.austin"
+repositories {
+    mavenCentral()
+}
 
 dependencies {
     for (any in listOf(
@@ -22,12 +27,6 @@ tasks {
     test {
         testLogging.showStandardStreams = true
         useJUnitPlatform()
-    }
-}
-
-allprojects {
-    repositories {
-        mavenCentral()
     }
 }
 
