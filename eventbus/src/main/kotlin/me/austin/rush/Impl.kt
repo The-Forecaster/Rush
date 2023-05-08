@@ -18,9 +18,9 @@ import kotlin.reflect.typeOf
 annotation class EventHandler
 
 /**
- * Basic implementation of [EventBus]
+ * Basic implementation of [IEventBus]
  */
-open class EventManager : EventBus {
+open class EventBus : IEventBus {
     override val registry = ConcurrentHashMap<KClass<*>, MutableList<Listener<*>>>()
 
     // Using this here, so we don't have to make more reflection calls

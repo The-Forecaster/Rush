@@ -27,7 +27,7 @@ interface Listener<T : Any> {
  *
  * @author Austin
  */
-interface EventBus {
+interface IEventBus {
     /**
      * Map that will be used to store registered listeners and their targets
      *

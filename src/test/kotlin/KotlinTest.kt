@@ -1,6 +1,6 @@
 import kotlinx.coroutines.delay
 import me.austin.rush.EventHandler
-import me.austin.rush.EventManager
+import me.austin.rush.EventBus
 import me.austin.rush.asyncListener
 import me.austin.rush.listener
 import org.junit.jupiter.api.Test
@@ -24,7 +24,7 @@ class KotlinTest {
             println("$it that's delayed and with higher priority!")
         }, 200)
 
-        with(EventManager()) {
+        with(EventBus()) {
             registerAll(listener, async)
             register(KotlinTest())
             dispatch("I just posted an event")
