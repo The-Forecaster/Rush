@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.ir.backend.js.compile
+
 plugins {
     java
     kotlin("jvm") version "1.8.20"
@@ -17,18 +19,28 @@ dependencies {
     implementation(group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version = "1.7.0-RC") {
         exclude(module = "kotlin-stdlib-jdk8")
         exclude(module = "kotlin-stdlib-common")
-        isTransitive = false
     }
 
     implementation(group = "org.jetbrains.kotlin", name = "kotlin-reflect", version = "1.8.20") {
         exclude(module = "kotlin-stdlib")
-        isTransitive = false
     }
+
+    compileOnly(project(":lightweight"))
 }
 
 java {
     withSourcesJar()
     withJavadocJar()
+}
+
+task("copyLicense") {
+    outputs.file(File("$buildDir/LICENSE"))
+    doLast {
+        copy {
+            from("LICENSE")
+            into("$buildDir")
+        }
+    }
 }
 
 tasks {
