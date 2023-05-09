@@ -13,7 +13,7 @@ open class EventManager {
     /**
      * For all the classes of events and the lambdas which target them
      */
-    open val registry = linkedMapOf<KClass<*>, MutableList<(Any) -> Unit>>()
+    open val registry = linkedMapOf<KClass<*>, LinkedList<Handler>>()
 
     /**
      * Add a lambda to the [registry]
@@ -21,8 +21,24 @@ open class EventManager {
      * @param T the type the lambda accepts
      * @param action the lambda to be added
      */
-    inline fun <reified T : Any> register(noinline action: (T) -> Unit) {
-        registry.getOrPut(T::class) { LinkedList() }.add(action as (Any) -> Unit)
+    inline fun <reified T> register(noinline action: (T) -> Unit) {
+        this.registry.getOrPut(T::class) { LinkedList() }.let {
+            synchronized(it) {
+                it.add(Handler(action))
+            }
+        }
+    }
+
+    inline fun <reified T> register(noinline action: (T) -> Unit, parent: Any) {
+        this.registry.getOrPut(T::class) { LinkedList() }.let {
+            synchronized(it) { it.add(Handler(action, parent)) }
+        }
+    }
+
+    inline fun <reified T> unregister(parent: Any) {
+        this.registry[T::class]?.let { list ->
+            synchronized(list) { list.removeIf { it.parent == parent } }
+        }
     }
 
     /**
@@ -30,12 +46,16 @@ open class EventManager {
      *
      * @param event event to be posted to all registered actions
      */
-    fun post(event: Any) {
+    open fun post(event: Any) {
         for (clazz in event::class.allClasses) {
             this.registry[clazz]?.let {
-                synchronized(it) { for (action in it) action(event) }
+                synchronized(it) { for (handler in it) handler.action(event) }
             }
         }
+    }
+
+    class Handler(lambda: (Nothing) -> Unit, val parent: Any? = null) {
+        val action = lambda as (Any) -> Unit
     }
 }
 
