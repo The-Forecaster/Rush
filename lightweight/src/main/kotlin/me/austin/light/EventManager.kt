@@ -63,7 +63,7 @@ open class EventManager {
 /**
  * This is stolen from [<a href="https://github.com/x4e/EventDispatcher/">cookiedragon</a>]
  *
- * @return the class and all of its superclasses in order
+ * @return immutable list of the class and all of its superclasses in order
  */
 internal val KClass<*>.allClasses: List<KClass<*>>
     get() {
