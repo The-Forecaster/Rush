@@ -13,7 +13,7 @@ open class EventManager {
     /**
      * For all the classes of events and the lambdas which target them
      */
-    open val registry = linkedMapOf<KClass<*>, LinkedList<Handler>>()
+    open val registry = mutableMapOf<KClass<*>, MutableList<Handler>>()
 
     /**
      * Add a lambda to the [registry]
@@ -23,21 +23,19 @@ open class EventManager {
      */
     inline fun <reified T> register(noinline action: (T) -> Unit) {
         this.registry.getOrPut(T::class) { LinkedList() }.let {
-            synchronized(it) {
-                it.add(Handler(action))
-            }
+            synchronized(it) { it.add(Handler(action)) }
         }
     }
 
-    inline fun <reified T> register(noinline action: (T) -> Unit, parent: Any) {
+    /**
+     * Add a [Handler] to the [registry]
+     *
+     * @param T the action the handler will accept
+     * @param handler the handler object to add to the registry
+     */
+    inline fun <reified T> register(handler: Handler) {
         this.registry.getOrPut(T::class) { LinkedList() }.let {
-            synchronized(it) { it.add(Handler(action, parent)) }
-        }
-    }
-
-    inline fun <reified T> unregister(parent: Any) {
-        this.registry[T::class]?.let { list ->
-            synchronized(list) { list.removeIf { it.parent == parent } }
+            synchronized(it) { it.add(handler) }
         }
     }
 
@@ -49,12 +47,17 @@ open class EventManager {
     open fun post(event: Any) {
         for (clazz in event::class.allClasses) {
             this.registry[clazz]?.let {
-                synchronized(it) { for (handler in it) handler.action(event) }
+                synchronized(it) { for (handler in it) if (handler.active) handler.action(event) }
             }
         }
     }
 
-    class Handler(lambda: (Nothing) -> Unit, val parent: Any? = null) {
+    /**
+     * For containing a listener and if its active
+     *
+     * If you wish for a listener to no longer accept events then just set active to false
+     */
+    class Handler(lambda: (Nothing) -> Unit, var active: Boolean = true) {
         val action = lambda as (Any) -> Unit
     }
 }
