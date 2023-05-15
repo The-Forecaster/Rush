@@ -1,31 +1,8 @@
-package me.austin.rush
+package me.austin.rush;
 
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.reflect.KClass
-
-/**
- * Basic structure for an event listener and invoker.
- *
- * @author Austin
- * @since 2022
- */
-interface IListener<T : Any> : Comparable<IListener<*>> {
-    /** the class of the target event */
-    val target: KClass<T>
-
-    /** the priority that the listener will be called upon(use wisely) */
-    val priority: Int
-
-    /**
-     * Processes an event passed through this listener
-     *
-     * @param param event object that is being processed
-     */
-    operator fun invoke(param: T)
-
-    override fun compareTo(other: IListener<*>): Int {
-        return -this.priority.compareTo(other.priority)
-    }
-}
 
 /**
  * Basic structure for an event dispatcher
@@ -137,19 +114,80 @@ interface IEventBus {
 }
 
 /**
- * Framework for a cancellable event
+ * Basic implementation of [IEventBus]
  *
  * @author Austin
  * @since 2022
  */
-abstract class Cancellable {
-    var isCancelled = false
-        private set
+open class EventBus : IEventBus {
+    override val registry = ConcurrentHashMap<KClass<*>, MutableList<IListener<*>>>()
+
+    // Using this here, so we don't have to make more reflection calls
+    private val cache = ConcurrentHashMap<Any, List<IListener<*>>>()
+
+    override fun register(listener: IListener<*>) {
+        this.registry.getOrPut(listener.target, ::CopyOnWriteArrayList).let {
+            // For if a listener is already registered
+            if (it.contains(listener)) return
+
+            var index = 0
+
+            while (index < it.size) {
+                if (it[index].priority < listener.priority) break
+
+                index++
+            }
+
+            it.add(index, listener)
+        }
+    }
+
+    override fun unregister(listener: IListener<*>) {
+        this.registry[listener.target]?.remove(listener)
+    }
+
+    override fun register(subscriber: Any) {
+        for (listener in this.cache.getOrPut(subscriber, subscriber::listeners)) this.register(listener)
+    }
+
+    override fun unregister(subscriber: Any) {
+        for (listener in subscriber.listeners) this.unregister(listener)
+    }
+
+    override fun <T : Any> dispatch(event: T) {
+        // Nullable cast in case the event doesn't have any listeners
+        (registry[event::class] as? MutableList<IListener<T>>)?.let {
+            synchronized(it) {
+                for (listener in it) listener(event)
+            }
+        }
+    }
 
     /**
-     * Use this function to set isCancelled to true
+     * Dispatches an event that is cancellable.
+     * When the event is cancelled it will not be posted to any listeners after
+     *
+     * @param event the event which will be posted
+     * @return the event passed through
      */
-    fun cancel() {
-        this.isCancelled = true
+    fun <T : Cancellable> dispatch(event: T): T {
+        // Nullable cast in case the event doesn't have any listeners
+        (registry[event::class] as? MutableList<IListener<T>>)?.let {
+            // This could cause some problems, but we probably want this for thread-safety
+            synchronized(it) {
+                for (listener in it) {
+                    listener(event)
+                    if (event.isCancelled) break
+                }
+            }
+        }
+
+        return event
+    }
+
+    fun <T : Any> listWith(clazz: KClass<T>, block: (MutableList<IListener<T>>) -> Unit) {
+        (registry[clazz] as? MutableList<IListener<T>>)?.let {
+            block(it)
+        }
     }
 }
