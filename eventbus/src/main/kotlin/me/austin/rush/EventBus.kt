@@ -127,39 +127,46 @@ open class EventBus : IEventBus {
 
     override fun register(listener: IListener<*>) {
         this.registry.getOrPut(listener.target, ::CopyOnWriteArrayList).let {
-            // For if a listener is already registered
-            if (it.contains(listener)) return
+            synchronized(it) {
+                if (it.contains(listener)) return
 
-            var index = 0
+                var index = 0
 
-            while (index < it.size) {
-                if (it[index].priority < listener.priority) break
+                while (index < it.size) {
+                    if (it[index].priority < listener.priority) break
 
-                index++
+                    index++
+                }
+
+                it.add(index, listener)
             }
-
-            it.add(index, listener)
         }
     }
 
     override fun unregister(listener: IListener<*>) {
-        this.registry[listener.target]?.remove(listener)
+        this.registry[listener.target]?.let {
+            synchronized(it) {
+                it.remove(listener)
+            }
+        }
     }
 
     override fun register(subscriber: Any) {
-        for (listener in this.cache.getOrPut(subscriber, subscriber::listeners)) this.register(listener)
+        for (listener in this.cache.getOrPut(subscriber, subscriber::listeners)) {
+            this.register(listener)
+        }
     }
 
     override fun unregister(subscriber: Any) {
-        for (listener in subscriber.listeners) this.unregister(listener)
+        for (listener in subscriber.listeners) {
+            this.unregister(listener)
+        }
     }
 
     override fun <T : Any> dispatch(event: T) {
         this.listWith(event) {
-            synchronized(it) {
-                for (listener in it) {
-                    listener(event)
-                }
+            for (listener in it) {
+                listener(event)
             }
         }
     }
@@ -173,19 +180,22 @@ open class EventBus : IEventBus {
      */
     fun <T : Cancellable> dispatch(event: T): T {
         this.listWith(event) {
-            // This could cause some problems, but we probably want this for thread-safety
-            synchronized(it) {
-                for (listener in it) {
-                    listener(event)
-                    if (event.isCancelled) break
-                }
+            for (listener in it) {
+                listener(event)
+                if (event.isCancelled) break
             }
         }
 
         return event
     }
 
-    fun <T : Any> listWith(event: T, block: (MutableList<IListener<T>>) -> Unit) {
+    /**
+     * For removing code duplication
+     *
+     * @param event event to call from [registry]
+     * @param block the code block to call if the list exists
+     */
+    open fun <T : Any> listWith(event: T, block: (MutableList<IListener<T>>) -> Unit) {
         (registry[event::class] as? MutableList<IListener<T>>)?.let {
             block(it)
         }

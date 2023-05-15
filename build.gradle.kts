@@ -5,16 +5,18 @@ allprojects {
 
 plugins {
     java
-    kotlin("jvm") version "1.8.20"
+    kotlin("jvm") version "1.8.21"
 }
+
+val kotlinVersion: String by project
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    testImplementation(kotlin(module = "test"))
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.0-RC")
+    testImplementation(kotlin(module = "test", version = kotlinVersion))
+    testImplementation(group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version = "1.7.0-RC")
     testImplementation(project(path = ":eventbus"))
     testImplementation(project(path = ":lightweight"))
 }

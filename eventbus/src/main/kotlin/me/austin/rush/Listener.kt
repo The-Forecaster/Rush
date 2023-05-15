@@ -1,7 +1,5 @@
 package me.austin.rush
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.function.Consumer
 import kotlin.reflect.KClass
@@ -42,6 +40,18 @@ open class LambdaListener<T : Any> @PublishedApi internal constructor(
 }
 
 /**
+ * This is for making listeners with less overhead
+ *
+ * @param T type the lambda will accept
+ * @param action consumer the listeners will call when an event is posted
+ *
+ * @return [LambdaListener] with the action
+ */
+inline fun <reified T : Any> listener(noinline action: (T) -> Unit): LambdaListener<T> {
+    return LambdaListener(T::class, -50, action)
+}
+
+/**
  * This is for making listeners in Kotlin
  *
  * @param T type the lambda will accept
@@ -53,9 +63,9 @@ open class LambdaListener<T : Any> @PublishedApi internal constructor(
  */
 inline fun <reified T : Any> listener(
     noinline action: (T) -> Unit, priority: Int = -50, target: KClass<T> = T::class,
-) = LambdaListener(target, priority, action)
-
-private val scope = CoroutineScope(Dispatchers.Default)
+): LambdaListener<T> {
+    return LambdaListener(target, priority, action)
+}
 
 /** Implementation of [IListener] that uses an async/await function as its action */
 open class AsyncListener<T : Any> @PublishedApi internal constructor(
@@ -64,6 +74,18 @@ open class AsyncListener<T : Any> @PublishedApi internal constructor(
     override operator fun invoke(param: T) {
         scope.launch { action(param) }
     }
+}
+
+/**
+ * This is for making asynchronous listeners with less overhead
+ *
+ * @param T type the lambda will accept
+ * @param action consumer the listeners will call when an event is posted
+ *
+ * @return [AsyncListener] with the action
+ */
+inline fun <reified T : Any> asyncListener(noinline action: suspend (T) -> Unit): AsyncListener<T> {
+    return AsyncListener(T::class, -50, action)
 }
 
 /**
@@ -78,4 +100,6 @@ open class AsyncListener<T : Any> @PublishedApi internal constructor(
  */
 inline fun <reified T : Any> asyncListener(
     noinline action: suspend (T) -> Unit, priority: Int = -50, target: KClass<T> = T::class
-) = AsyncListener(target, priority, action)
+): AsyncListener<T> {
+    return AsyncListener(target, priority, action)
+}

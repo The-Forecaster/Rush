@@ -25,7 +25,7 @@ open class EventManager(open val recursive: Boolean) {
      */
     inline fun <reified T> register(noinline action: (T) -> Unit) {
         this.registry.getOrPut(T::class) { LinkedList() }.let {
-            synchronized(it) { it.add(Handler(action, this)) }
+            synchronized(it) { it.add(Handler(action)) }
         }
     }
 
@@ -82,25 +82,36 @@ open class EventManager(open val recursive: Boolean) {
      * @param lambda action to be invoked
      * @param parent object to be checked when removing listeners
      */
-    open class Handler(lambda: (Nothing) -> Unit, val parent: Any) {
+    open class Handler(
+        lambda: (Nothing) -> Unit,
+        /**
+         * (Nullable) object to check when removing listeners
+         */
+        val parent: Any? = null
+    ) {
         /**
          * Action to be invoked
          */
+        // This cast will never fail
         open val action = lambda as (Any) -> Unit
     }
-}
 
-/**
- * This is copied from [<a href="https://github.com/x4e/EventDispatcher/">cookiedragon</a>]
- *
- * @return immutable list of the class and all of its superclasses in order
- */
-internal fun KClass<*>.getClasses(recursive: Boolean): List<KClass<*>> {
-    val classes = mutableListOf(this)
-    var clazz: Class<*>? = this.java.superclass
-    while (recursive && clazz != null) {
-        classes.add(clazz.kotlin)
-        clazz = clazz.superclass
+    /**
+     * This is copied from [<a href="https://github.com/x4e/EventDispatcher/">cookiedragon</a>]
+     *
+     * @return immutable list of the class and all of its superclasses in order
+     */
+    private fun KClass<*>.getClasses(recursive: Boolean): List<KClass<*>> {
+        val classes = mutableListOf(this)
+        var clazz: Class<*>? = this.java.superclass
+        while (recursive && clazz != null) {
+            classes.add(clazz.kotlin)
+            clazz = clazz.superclass
+        }
+        return classes.toList()
     }
-    return classes.toList()
+
+    fun Any.handler(lambda: (Nothing) -> Unit): Handler {
+        return Handler(lambda, this)
+    }
 }
