@@ -185,9 +185,9 @@ open class EventBus : IEventBus {
         return event
     }
 
-    private fun <T : Any> listWith(event: T, block: (MutableList<IListener<T>>) -> Unit) {
+    fun <T : Any> listWith(event: T, block: (MutableList<IListener<T>>) -> Unit) {
         (registry[event::class] as? MutableList<IListener<T>>)?.let {
-            (block(it))
+            block(it)
         }
     }
 }
