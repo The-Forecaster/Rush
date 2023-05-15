@@ -1,4 +1,4 @@
-package me.austin.rush;
+package me.austin.rush
 
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
