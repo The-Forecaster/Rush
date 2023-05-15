@@ -10,6 +10,7 @@ repositories {
 dependencies {
     implementation(group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version = "1.7.0-RC")
     implementation(kotlin(module = "reflect", version = "1.8.20"))
+    implementation(kotlin(module = "stdlib-jdk8", version = "1.8.20"))
 }
 
 java {

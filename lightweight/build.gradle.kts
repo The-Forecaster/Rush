@@ -12,6 +12,10 @@ java {
     withJavadocJar()
 }
 
+kotlin {
+    jvmToolchain(17)
+}
+
 tasks {
     named<Jar>("javadocJar") {
         from(named("dokkaJavadoc"))

@@ -3,6 +3,7 @@ package me.austin.rush
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.function.Consumer
@@ -50,22 +51,35 @@ open class EventBus : IEventBus {
     }
 
     override fun unregister(listener: IListener<*>) {
-        this.registry[listener.target]?.remove(listener)
+        this.registry[listener.target]?.let {
+            // Adding this here to improve posting performance
+            if (it.size == 1) {
+                this.registry.remove(listener.target)
+            } else {
+                it.remove(listener)
+            }
+        }
     }
 
     override fun register(subscriber: Any) {
-        for (listener in this.cache.getOrPut(subscriber, subscriber::listeners)) this.register(listener)
+        for (listener in this.cache.getOrPut(subscriber, subscriber::listeners)) {
+            this.register(listener)
+        }
     }
 
     override fun unregister(subscriber: Any) {
-        for (listener in subscriber.listeners) this.unregister(listener)
+        for (listener in subscriber.listeners) {
+            this.unregister(listener)
+        }
     }
 
     override fun <T : Any> dispatch(event: T) {
         // Nullable cast in case the event doesn't have any listeners
-        (registry[event::class] as? MutableList<IListener<T>>)?.let {
+        this.listWith(event) {
             synchronized(it) {
-                for (listener in it) listener(event)
+                for (listener in it) {
+                    listener(event)
+                }
             }
         }
     }
@@ -78,8 +92,8 @@ open class EventBus : IEventBus {
      * @return the event passed through
      */
     fun <T : Cancellable> dispatch(event: T): T {
-        // Nullable cast in case the event doesn't have any listeners
-        (registry[event::class] as? MutableList<IListener<T>>)?.let {
+        // Nullable cast in case the event doesn't have any listeners or the type is Nothing
+        this.listWith(event) {
             // This could cause some problems, but we probably want this for thread-safety
             synchronized(it) {
                 for (listener in it) {
@@ -91,6 +105,12 @@ open class EventBus : IEventBus {
 
         return event
     }
+
+    private fun <T : Any> listWith(event: T, block: (MutableList<IListener<T>>) -> Unit) {
+        (registry[event::class] as? MutableList<IListener<T>>)?.let {
+            (block(it))
+        }
+    }
 }
 
 // Most of this is pasted or inspired from bush https://github.com/therealbush/eventbus-kotlin, check him out if you want to see actually good code
@@ -100,13 +120,14 @@ private val KCallable<*>.isListener: Boolean
         .isSubtypeOf(typeOf<IListener<*>>())
 
 private val <T : Any> KClass<T>.listeners: List<KCallable<IListener<*>>>
-    // This cast will never fail
-    get() = (this.superclasses.flatMap { it.declaredMembers } + declaredMembers).filter(KCallable<*>::isListener) as List<KCallable<IListener<*>>>
+    get() = ((this.superclasses.flatMap { it.declaredMembers } + declaredMembers)
+        // This cast will never fail
+        .filter(KCallable<*>::isListener) as List<KCallable<IListener<*>>>)
 
 private val Any.listeners: List<IListener<*>>
-    get() = this::class.listeners.mapTo(ArrayList()) { it.handleCall(this) }.toList()
+    get() = this::class.listeners.mapTo(ArrayList(this::class.listeners.size)) { it.handleCall(this) }.toList()
 
-private fun <T : Any> KCallable<T>.handleCall(receiver: Any? = null): T {
+private fun <T> KCallable<T>.handleCall(receiver: Any? = null): T {
     val accessible = this.isAccessible
     this.isAccessible = true
 

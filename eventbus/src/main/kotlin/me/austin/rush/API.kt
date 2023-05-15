@@ -8,7 +8,7 @@ import kotlin.reflect.KClass
  * @author Austin
  * @since 2022
  */
-interface IListener<T : Any> {
+interface IListener<T : Any> : Comparable<IListener<*>> {
     /** the class of the target event */
     val target: KClass<T>
 
@@ -21,6 +21,10 @@ interface IListener<T : Any> {
      * @param param event object that is being processed
      */
     operator fun invoke(param: T)
+
+    override fun compareTo(other: IListener<*>): Int {
+        return -this.priority.compareTo(other.priority)
+    }
 }
 
 /**
