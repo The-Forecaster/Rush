@@ -13,14 +13,10 @@ repositories {
 }
 
 dependencies {
-    for (any in listOf(
-        kotlin(module = "test"),
-        "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.0-RC",
-        project(path = ":eventbus"),
-        project(path = ":lightweight"),
-    )) {
-        testImplementation(any)
-    }
+    testImplementation(kotlin(module = "test"))
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.0-RC")
+    testImplementation(project(path = ":eventbus"))
+    testImplementation(project(path = ":lightweight"))
 }
 
 tasks {
