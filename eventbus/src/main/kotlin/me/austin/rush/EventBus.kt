@@ -17,22 +17,24 @@ interface IEventBus {
      * The key-set will hold all stored targets of listeners
      * The value-set will hold the list of listeners corresponding to their respective targets
      */
-    val registry: MutableMap<KClass<*>, MutableList<IListener<*>>>
+    val registry: MutableMap<KClass<*>, MutableList<Listener<*>>>
 
     /**
      * Adds the listener into the registry
      *
      * @param listener instance of listener<T> to subscribe
      */
-    fun register(listener: IListener<*>)
+    fun register(listener: Listener<*>)
 
     /**
      * Adds all listeners to the registry
      *
      * @param listeners all listeners you want to be added
      */
-    fun registerAll(vararg listeners: IListener<*>) {
-        for (listener in listeners) this.register(listener)
+    fun registerAll(vararg listeners: Listener<*>) {
+        for (listener in listeners) {
+            this.register(listener)
+        }
     }
 
     /**
@@ -40,8 +42,10 @@ interface IEventBus {
      *
      * @param listeners the iterable of listeners you want to be added
      */
-    fun registerAll(listeners: Iterable<IListener<*>>) {
-        for (listener in listeners) this.register(listener)
+    fun registerAll(listeners: Iterable<Listener<*>>) {
+        for (listener in listeners) {
+            this.register(listener)
+        }
     }
 
     /**
@@ -49,7 +53,7 @@ interface IEventBus {
      *
      * @param listener listener object to be removed
      */
-    fun unregister(listener: IListener<*>)
+    fun unregister(listener: Listener<*>)
 
     /**
      * Removes all listeners from the registry
@@ -57,8 +61,10 @@ interface IEventBus {
      * @param listeners listener objects you want to be removed
      * @see unregister
      */
-    fun unregisterAll(vararg listeners: IListener<*>) {
-        for (listener in listeners) this.unregister(listener)
+    fun unregisterAll(vararg listeners: Listener<*>) {
+        for (listener in listeners) {
+            this.unregister(listener)
+        }
     }
 
     /**
@@ -67,8 +73,10 @@ interface IEventBus {
      * @param listeners iterable of listeners you want to be removed
      * @see unregister
      */
-    fun unregisterAll(listeners: Iterable<IListener<*>>) {
-        for (listener in listeners) this.unregister(listener)
+    fun unregisterAll(listeners: Iterable<Listener<*>>) {
+        for (listener in listeners) {
+            this.unregister(listener)
+        }
     }
 
     /**
@@ -84,7 +92,9 @@ interface IEventBus {
      * @param subscribers all subscribers you want to be added to the registry
      */
     fun registerAll(vararg subscribers: Any) {
-        for (subscriber in subscribers) this.register(subscriber)
+        for (subscriber in subscribers) {
+            this.register(subscriber)
+        }
     }
 
     /**
@@ -100,7 +110,9 @@ interface IEventBus {
      * @param subscribers all subscribers you want removed from the registry
      */
     fun unregisterAll(vararg subscribers: Any) {
-        for (subscriber in subscribers) this.unregister(subscriber)
+        for (subscriber in subscribers) {
+            this.unregister(subscriber)
+        }
     }
 
     /**
@@ -120,12 +132,12 @@ interface IEventBus {
  * @since 2022
  */
 open class EventBus : IEventBus {
-    override val registry = ConcurrentHashMap<KClass<*>, MutableList<IListener<*>>>()
+    override val registry = ConcurrentHashMap<KClass<*>, MutableList<Listener<*>>>()
 
     // Using this here, so we don't have to make more reflection calls
-    private val cache = ConcurrentHashMap<Any, List<IListener<*>>>()
+    private val cache = ConcurrentHashMap<Any, List<Listener<*>>>()
 
-    override fun register(listener: IListener<*>) {
+    override fun register(listener: Listener<*>) {
         this.registry.getOrPut(listener.target, ::CopyOnWriteArrayList).let {
             synchronized(it) {
                 if (it.contains(listener)) return
@@ -143,7 +155,7 @@ open class EventBus : IEventBus {
         }
     }
 
-    override fun unregister(listener: IListener<*>) {
+    override fun unregister(listener: Listener<*>) {
         this.registry[listener.target]?.let {
             synchronized(it) {
                 it.remove(listener)
@@ -195,8 +207,8 @@ open class EventBus : IEventBus {
      * @param event event to call from [registry]
      * @param block the code block to call if the list exists
      */
-    open fun <T : Any> listWith(event: T, block: (MutableList<IListener<T>>) -> Unit) {
-        (registry[event::class] as? MutableList<IListener<T>>)?.let {
+    open fun <T : Any> listWith(event: T, block: (MutableList<Listener<T>>) -> Unit) {
+        (registry[event::class] as? MutableList<Listener<T>>)?.let {
             block(it)
         }
     }

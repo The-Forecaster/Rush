@@ -17,8 +17,8 @@ repositories {
 dependencies {
     testImplementation(kotlin(module = "test", version = kotlinVersion))
     testImplementation(group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version = "1.7.0-RC")
-    testImplementation(project(path = ":eventbus"))
-    testImplementation(project(path = ":lightweight"))
+    testImplementation(project(":eventbus"))
+    testImplementation(project(":lightweight"))
 }
 
 tasks {

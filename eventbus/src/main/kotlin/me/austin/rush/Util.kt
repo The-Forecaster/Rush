@@ -23,17 +23,17 @@ internal val scope = CoroutineScope(Dispatchers.Default)
 
 private val KCallable<*>.isListener: Boolean
     get() {
-        return this.hasAnnotation<EventHandler>() && this.returnType.isSubtypeOf(typeOf<IListener<*>>())
+        return this.hasAnnotation<EventHandler>() && this.returnType.isSubtypeOf(typeOf<Listener<*>>())
     }
 
-private val <T : Any> KClass<T>.listeners: List<KCallable<IListener<*>>>
+private val <T : Any> KClass<T>.listeners: List<KCallable<Listener<*>>>
     get() {
         return ((declaredMembers + this.superclasses.flatMap { it.declaredMembers })
             // This cast will never fail
-            .filter(KCallable<*>::isListener) as List<KCallable<IListener<*>>>)
+            .filter(KCallable<*>::isListener) as List<KCallable<Listener<*>>>)
     }
 
-internal val Any.listeners: List<IListener<*>>
+internal val Any.listeners: List<Listener<*>>
     get() {
         return this::class.listeners.mapTo(ArrayList(this::class.listeners.size)) {
             it.handleCall(this)

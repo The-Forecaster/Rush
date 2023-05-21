@@ -1,6 +1,5 @@
 package me.austin.light
 
-import java.util.*
 import kotlin.reflect.KClass
 
 /**
@@ -15,7 +14,7 @@ open class EventManager(open val recursive: Boolean) {
     /**
      * For all the classes of events and the lambdas which target them
      */
-    open val registry = mutableMapOf<KClass<*>, MutableList<Handler>>()
+    open val registry = mutableMapOf<KClass<*>, Array<Handler>>()
 
     /**
      * Add a static lambda to the [registry]
@@ -24,8 +23,20 @@ open class EventManager(open val recursive: Boolean) {
      * @param action the lambda to be added
      */
     inline fun <reified T> register(noinline action: (T) -> Unit) {
-        this.registry.getOrPut(T::class) { LinkedList() }.let {
-            synchronized(it) { it.add(Handler(action)) }
+        this.registry.getOrPut(T::class) { arrayOf() }.let {
+            this.registry.getOrPut(T::class) { arrayOf() }.let {
+                synchronized(it) {
+                    val fin = arrayOfNulls<Handler>(it.size + 1)
+
+                    for (i in it.indices) {
+                        fin[i] = it[i]
+                    }
+
+                    fin[fin.size - 1] = handler(action)
+
+                    this.registry[T::class] = fin as Array<Handler>
+                }
+            }
         }
     }
 
@@ -36,27 +47,40 @@ open class EventManager(open val recursive: Boolean) {
      * @param handler the handler object to add to the registry
      */
     inline fun <reified T> register(handler: Handler) {
-        this.registry.getOrPut(T::class) { LinkedList() }.let {
-            synchronized(it) { it.add(handler) }
+        this.registry.getOrPut(T::class) { arrayOf() }.let {
+            synchronized(it) {
+                val fin = arrayOfNulls<Handler>(it.size + 1)
+
+                for (i in it.indices) {
+                    fin[i] = it[i]
+                }
+
+                fin[fin.size - 1] = handler
+
+                this.registry[T::class] = fin as Array<Handler>
+            }
         }
     }
 
     /**
      * Remove all [Handler] objects from the list that have the parameter as their parent
      *
-     * @param parent the object search for and remove listeners of
+     * @param handler the object search for and remove listeners of
      */
-    fun unregister(parent: Any) {
-        for ((target, list) in this.registry) {
-            synchronized(list) {
-                list.removeIf {
-                    it.parent == parent
+    inline fun <reified T> unregister(handler: Handler) {
+        this.registry[T::class]?.let {
+            synchronized(it) {
+                val list = arrayOfNulls<Handler>(it.size - 1)
+                var index = 0
+
+                for (i in it.indices) {
+                    if (handler != it[i]) {
+                        list[index] = handler
+                        index += 1
+                    }
                 }
 
-                // This improves posting performance which is more important
-                if (list.isEmpty()) {
-                    this.registry.remove(target)
-                }
+                this.registry[T::class] = list as Array<Handler>
             }
         }
     }
@@ -87,7 +111,7 @@ open class EventManager(open val recursive: Boolean) {
         /**
          * (Nullable) object to check when removing listeners
          */
-        val parent: Any? = null
+        private val parent: Any? = null
     ) {
         /**
          * Action to be invoked
