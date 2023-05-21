@@ -23,19 +23,15 @@ open class EventManager(open val recursive: Boolean) {
      * @param action the lambda to be added
      */
     inline fun <reified T> register(noinline action: (T) -> Unit) {
-        this.registry.getOrPut(T::class) { arrayOf() }.let {
-            this.registry.getOrPut(T::class) { arrayOf() }.let {
-                synchronized(it) {
-                    val fin = arrayOfNulls<Handler>(it.size + 1)
+        this.registry.getOrPut(T::class) { emptyArray() }.let {
+            synchronized(it) {
+                val list = arrayOfNulls<Handler>(it.size + 1)
 
-                    for (i in it.indices) {
-                        fin[i] = it[i]
-                    }
+                System.arraycopy(this, 0, list, 0, it.size)
 
-                    fin[fin.size - 1] = handler(action)
+                list[list.size - 1] = Handler(action)
 
-                    this.registry[T::class] = fin as Array<Handler>
-                }
+                this.registry[T::class] = list as Array<Handler>
             }
         }
     }
@@ -47,17 +43,15 @@ open class EventManager(open val recursive: Boolean) {
      * @param handler the handler object to add to the registry
      */
     inline fun <reified T> register(handler: Handler) {
-        this.registry.getOrPut(T::class) { arrayOf() }.let {
+        this.registry.getOrPut(T::class) { emptyArray() }.let {
             synchronized(it) {
-                val fin = arrayOfNulls<Handler>(it.size + 1)
+                val list = arrayOfNulls<Handler>(it.size + 1)
 
-                for (i in it.indices) {
-                    fin[i] = it[i]
-                }
+                System.arraycopy(this, 0, list, 0, it.size)
 
-                fin[fin.size - 1] = handler
+                list[list.size - 1] = handler
 
-                this.registry[T::class] = fin as Array<Handler>
+                this.registry[T::class] = list as Array<Handler>
             }
         }
     }
@@ -73,7 +67,7 @@ open class EventManager(open val recursive: Boolean) {
                 val list = arrayOfNulls<Handler>(it.size - 1)
                 var index = 0
 
-                for (i in it.indices) {
+                for (i in 0 until it.size - 1) {
                     if (handler != it[i]) {
                         list[index] = handler
                         index += 1
@@ -135,6 +129,9 @@ open class EventManager(open val recursive: Boolean) {
         return classes.toList()
     }
 
+    /**
+     * Creates a new lambda with the parent object as its [Handler.parent]
+     */
     fun Any.handler(lambda: (Nothing) -> Unit): Handler {
         return Handler(lambda, this)
     }
