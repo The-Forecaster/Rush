@@ -11,7 +11,6 @@ final class JavaTest {
     @Test
     public void test() {
         final EventBus BUS = new EventBus();
-
         final LambdaListener<String> LIST = new LambdaListener<>(event -> System.out.println(event + "!"), String.class);
 
         BUS.register(LIST);

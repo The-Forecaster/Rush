@@ -1,7 +1,6 @@
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import me.austin.light.EventManager
-import me.austin.light.handler
 import me.austin.rush.EventBus
 import me.austin.rush.EventHandler
 import me.austin.rush.asyncListener
@@ -40,16 +39,14 @@ class KotlinTest {
 
     @Test
     fun test_lightweight() {
-        val manager = EventManager()
+        with(EventManager(false)) {
+            register<String> {
+                println("$it!")
+            }
 
-        manager.register<String> {
-            println("$it!")
+            println(this.registry[String::class]!!.size)
+            println(this.registry[String::class])
+            post("I just posted an event")
         }
-
-        manager.register<String>(handler<String> {
-            println("$it again!")
-        })
-
-        manager.post("I just posted an event")
     }
 }
