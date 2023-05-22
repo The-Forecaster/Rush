@@ -41,15 +41,13 @@ class EventManager(private val recursive: Boolean = true) {
                     1 -> arrayOf(array[0], action)
                     2 -> arrayOf(array[0], array[1], action)
                     else -> {
-                        val fin = Array(array.size + 1) {
-                            try {
-                                array[it]
-                            } catch(e: Exception) {
-                                null
-                            }
+                        val fin = arrayOfNulls<(T) -> Unit>(array.size + 1)
+
+                        for (i in array.indices) {
+                            fin[i] = array[i]
                         }
 
-                        fin[array.size - 1] = action
+                        fin[fin.size - 1] = action
                         fin
                     }
                 } as Array<out (Any) -> Unit>
@@ -74,7 +72,7 @@ class EventManager(private val recursive: Boolean = true) {
 
                         for (element in it) {
                             if (action != element) {
-                                array[index] = action
+                                array[index] = element
                                 index++
                             }
                         }
