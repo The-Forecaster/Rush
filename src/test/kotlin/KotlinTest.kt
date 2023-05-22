@@ -39,13 +39,27 @@ class KotlinTest {
 
     @Test
     fun test_lightweight() {
+        val act: (String) -> Unit = {
+            println("$it!!!!!!!")
+        }
+
         with(EventManager(false)) {
             register<String> {
                 println("$it!")
             }
 
+            register<String> {
+                println("$it!!")
+            }
+
+            register<String> {
+                println("$it!!!")
+            }
+
+            register<String>(act)
+
             println(this.registry[String::class]!!.size)
-            println(this.registry[String::class])
+            for (i in this.registry[String::class]!!) println(i.toString())
             post("I just posted an event")
         }
     }

@@ -1,5 +1,8 @@
 package me.austin.light
 
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
 import kotlin.reflect.KClass
 
 /**
@@ -14,7 +17,7 @@ class EventManager(private val recursive: Boolean = true) {
     /**
      * For all the classes of events and the lambdas which target them
      */
-    val registry = mutableMapOf<KClass<*>, Array<(Any) -> Unit>>()
+    val registry = HashMap<KClass<*>, Array<out (Any) -> Unit>>()
 
     /**
      * This is so we only ever have 1 write action going on at a time
@@ -29,19 +32,27 @@ class EventManager(private val recursive: Boolean = true) {
      */
     inline fun <reified T : Any> register(noinline action: (T) -> Unit) {
         synchronized(writeSync) {
-            val array = this.registry[T::class]
+            val array = this.registry[T::class] as? Array<out (T) -> Unit>
 
             if (array == null) {
-                this.registry[T::class] = arrayOf(action) as Array<(Any) -> Unit>
+                this.registry[T::class] = arrayOf(action) as Array<out (Any) -> Unit>
             } else if (!array.contains(action)) {
-                val fin = arrayOfNulls<(T) -> Unit>(array.size + 1)
+                this.registry[T::class] = when(array.size) {
+                    1 -> arrayOf(array[0], action)
+                    2 -> arrayOf(array[0], array[1], action)
+                    else -> {
+                        val fin = Array(array.size + 1) {
+                            try {
+                                array[it]
+                            } catch(e: Exception) {
+                                null
+                            }
+                        }
 
-                System.arraycopy(array, 0, fin, 0, array.size)
-                fin[array.size - 1] = action
-
-                this.registry[T::class] = fin as Array<(Any) -> Unit>
-
-                println(fin.size)
+                        fin[array.size - 1] = action
+                        fin
+                    }
+                } as Array<out (Any) -> Unit>
             }
         }
     }
@@ -58,17 +69,17 @@ class EventManager(private val recursive: Boolean = true) {
                     if (it.size == 1) {
                         this.registry.remove(T::class)
                     } else {
-                        val array = arrayOfNulls<(T) -> Unit>(it.size - 1)
+                        val array = Array<((T) -> Unit)?>(it.size - 1) { null }
                         var index = 0
 
                         for (element in it) {
                             if (action != element) {
                                 array[index] = action
-                                index += 1
+                                index++
                             }
                         }
 
-                        this.registry[T::class] = array as Array<(Any) -> Unit>
+                        this.registry[T::class] = array as Array<out (Any) -> Unit>
                     }
                 }
             }
