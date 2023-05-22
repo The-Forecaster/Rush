@@ -1,5 +1,7 @@
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import me.austin.light.EventManager
+import me.austin.light.handler
 import me.austin.rush.EventBus
 import me.austin.rush.EventHandler
 import me.austin.rush.asyncListener
@@ -34,5 +36,20 @@ class KotlinTest {
         runBlocking {
             delay(1100)
         }
+    }
+
+    @Test
+    fun test_lightweight() {
+        val manager = EventManager()
+
+        manager.register<String> {
+            println("$it!")
+        }
+
+        manager.register<String>(handler<String> {
+            println("$it again!")
+        })
+
+        manager.post("I just posted an event")
     }
 }

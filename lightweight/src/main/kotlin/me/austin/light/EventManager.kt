@@ -3,6 +3,33 @@ package me.austin.light
 import kotlin.reflect.KClass
 
 /**
+ * For containing a listener and the object it's contained inside
+ *
+ * @param lambda action to be invoked
+ * @param parent object to be checked when removing listeners
+ */
+open class Handler(
+    lambda: (Nothing) -> Unit,
+    /**
+     * (Nullable) object to check when removing listeners
+     */
+    private val parent: Any? = null
+) {
+    /**
+     * Action to be invoked
+     */
+    // This cast will never fail
+    open val action = lambda as (Any) -> Unit
+}
+
+/**
+ * Creates a new lambda with the parent object as its [Handler.parent]
+ */
+fun <T> Any.handler(lambda: (T) -> Unit): Handler {
+    return Handler(lambda, this)
+}
+
+/**
  * Extremely lightweight event-bus made for kotlin use
  *
  * @author Austin
@@ -10,11 +37,16 @@ import kotlin.reflect.KClass
  *
  * @param recursive if the bus will also post superclasses of events posted
  */
-open class EventManager(open val recursive: Boolean) {
+open class EventManager(open val recursive: Boolean = true) {
     /**
      * For all the classes of events and the lambdas which target them
      */
     open val registry = mutableMapOf<KClass<*>, Array<Handler>>()
+
+    /**
+     * This is so we only ever have 1 write action going on at a time
+     */
+    open val writeSync = Any()
 
     /**
      * Add a static lambda to the [registry]
@@ -23,15 +55,18 @@ open class EventManager(open val recursive: Boolean) {
      * @param action the lambda to be added
      */
     inline fun <reified T> register(noinline action: (T) -> Unit) {
-        this.registry.getOrPut(T::class) { emptyArray() }.let {
-            synchronized(it) {
-                val list = arrayOfNulls<Handler>(it.size + 1)
+        synchronized(writeSync) {
+            val array = this.registry[T::class]
 
-                System.arraycopy(this, 0, list, 0, it.size)
+            if (array == null) {
+                this.registry[T::class] = arrayOf(Handler(action))
+            } else if (!array.contains(Handler(action))) {
+                val fin = arrayOfNulls<Handler>(array.size + 1)
 
-                list[list.size - 1] = Handler(action)
+                System.arraycopy(array, 0, fin, 0, array.size)
+                array[array.size - 1] = Handler(action)
 
-                this.registry[T::class] = list as Array<Handler>
+                this.registry[T::class] = fin as Array<Handler>
             }
         }
     }
@@ -43,15 +78,18 @@ open class EventManager(open val recursive: Boolean) {
      * @param handler the handler object to add to the registry
      */
     inline fun <reified T> register(handler: Handler) {
-        this.registry.getOrPut(T::class) { emptyArray() }.let {
-            synchronized(it) {
-                val list = arrayOfNulls<Handler>(it.size + 1)
+        synchronized(writeSync) {
+            val array = this.registry[T::class]
 
-                System.arraycopy(this, 0, list, 0, it.size)
+            if (array == null) {
+                this.registry[T::class] = arrayOf(handler)
+            } else if (!array.contains(handler)) {
+                val fin = arrayOfNulls<Handler>(array.size + 1)
 
-                list[list.size - 1] = handler
+                System.arraycopy(array, 0, fin, 0, array.size)
+                array[array.size - 1] = handler
 
-                this.registry[T::class] = list as Array<Handler>
+                this.registry[T::class] = fin as Array<Handler>
             }
         }
     }
@@ -62,19 +100,25 @@ open class EventManager(open val recursive: Boolean) {
      * @param handler the object search for and remove listeners of
      */
     inline fun <reified T> unregister(handler: Handler) {
-        this.registry[T::class]?.let {
-            synchronized(it) {
-                val list = arrayOfNulls<Handler>(it.size - 1)
-                var index = 0
+        synchronized(writeSync) {
+            this.registry[T::class]?.let { handlers ->
+                if (handlers.contains(handler)) {
+                    if (handlers.size == 1) {
+                        this.registry.remove(T::class)
+                    } else {
+                        val list = arrayOfNulls<Handler>(handlers.size - 1)
+                        var index = 0
 
-                for (i in 0 until it.size - 1) {
-                    if (handler != it[i]) {
-                        list[index] = handler
-                        index += 1
+                        for (element in handlers) {
+                            if (handler != element) {
+                                list[index] = handler
+                                index += 1
+                            }
+                        }
+
+                        this.registry[T::class] = list as Array<Handler>
                     }
                 }
-
-                this.registry[T::class] = list as Array<Handler>
             }
         }
     }
@@ -95,29 +139,9 @@ open class EventManager(open val recursive: Boolean) {
     }
 
     /**
-     * For containing a listener and the object it's contained inside
-     *
-     * @param lambda action to be invoked
-     * @param parent object to be checked when removing listeners
-     */
-    open class Handler(
-        lambda: (Nothing) -> Unit,
-        /**
-         * (Nullable) object to check when removing listeners
-         */
-        private val parent: Any? = null
-    ) {
-        /**
-         * Action to be invoked
-         */
-        // This cast will never fail
-        open val action = lambda as (Any) -> Unit
-    }
-
-    /**
      * This is copied from [<a href="https://github.com/x4e/EventDispatcher/">cookiedragon</a>]
-     *
-     * @return immutable list of the class and all of its superclasses in order
+     * @param recursive if we should also include superclasses of the class
+     * @return immutable list of the class and all of its superclasses in order if [recursive] is set to true
      */
     private fun KClass<*>.getClasses(recursive: Boolean): List<KClass<*>> {
         val classes = mutableListOf(this)
@@ -127,12 +151,5 @@ open class EventManager(open val recursive: Boolean) {
             clazz = clazz.superclass
         }
         return classes.toList()
-    }
-
-    /**
-     * Creates a new lambda with the parent object as its [Handler.parent]
-     */
-    fun Any.handler(lambda: (Nothing) -> Unit): Handler {
-        return Handler(lambda, this)
     }
 }
