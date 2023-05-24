@@ -3,6 +3,7 @@ package me.austin.rush
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.reflect.KCallable
 import kotlin.reflect.KClass
 import kotlin.reflect.full.*
@@ -33,11 +34,11 @@ private val <T : Any> KClass<T>.listeners: List<KCallable<Listener<*>>>
             .filter(KCallable<*>::isListener) as List<KCallable<Listener<*>>>)
     }
 
-internal val Any.listeners: List<Listener<*>>
+internal val Any.listeners: ArrayList<Listener<*>>
     get() {
         return this::class.listeners.mapTo(ArrayList(this::class.listeners.size)) {
             it.handleCall(this)
-        }.toList()
+        }
     }
 
 private fun <T> KCallable<T>.handleCall(receiver: Any? = null): T {

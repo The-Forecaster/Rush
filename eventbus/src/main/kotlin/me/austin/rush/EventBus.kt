@@ -12,14 +12,6 @@ import kotlin.reflect.KClass
  */
 interface IEventBus {
     /**
-     * Map that will be used to store registered listeners and their targets
-     *
-     * The key-set will hold all stored targets of listeners
-     * The value-set will hold the list of listeners corresponding to their respective targets
-     */
-    val registry: MutableMap<KClass<*>, MutableList<Listener<*>>>
-
-    /**
      * Adds the listener into the registry
      *
      * @param listener instance of listener<T> to subscribe
@@ -131,8 +123,14 @@ interface IEventBus {
  * @author Austin
  * @since 2022
  */
-open class EventBus : IEventBus {
-    override val registry = ConcurrentHashMap<KClass<*>, MutableList<Listener<*>>>()
+class EventBus : IEventBus {
+    /**
+     * Map that will be used to store registered listeners and their targets
+     *
+     * The key-set will hold all stored targets of listeners
+     * The value-set will hold the list of listeners corresponding to their respective targets
+     */
+    private val registry = ConcurrentHashMap<KClass<*>, MutableList<Listener<*>>>()
 
     // Using this here, so we don't have to make more reflection calls
     private val cache = ConcurrentHashMap<Any, List<Listener<*>>>()
@@ -194,7 +192,10 @@ open class EventBus : IEventBus {
         this.listWith(event) {
             for (listener in it) {
                 listener(event)
-                if (event.isCancelled) break
+
+                if (event.isCancelled) {
+                    break
+                }
             }
         }
 
@@ -207,7 +208,7 @@ open class EventBus : IEventBus {
      * @param event event to call from [registry]
      * @param block the code block to call if the list exists
      */
-    open fun <T : Any> listWith(event: T, block: (MutableList<Listener<T>>) -> Unit) {
+    private fun <T : Any> listWith(event: T, block: (MutableList<Listener<T>>) -> Unit) {
         (registry[event::class] as? MutableList<Listener<T>>)?.let {
             block(it)
         }

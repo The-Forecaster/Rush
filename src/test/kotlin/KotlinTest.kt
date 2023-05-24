@@ -56,11 +56,13 @@ class KotlinTest {
                 println("$it!!!")
             }
 
-            register<String>(act)
+            register(act)
 
-            println(this.registry[String::class]!!.size)
-            for (i in this.registry[String::class]!!) println(i.toString())
             post("I just posted an event")
+
+            unregister(act)
+
+            post("I just posted another event")
         }
     }
 }

@@ -26,9 +26,10 @@ interface Listener<T : Any> {
 }
 
 /** Implementation of [Listener] that uses a lambda function as its target */
-open class LambdaListener<T : Any> @PublishedApi internal constructor(
-    override val target: KClass<T>, override val priority: Int, protected val action: (T) -> Unit
+class LambdaListener<T : Any> @PublishedApi internal constructor(
+    override val target: KClass<T>, override val priority: Int, internal val action: (T) -> Unit
 ) : Listener<T> {
+
     @JvmOverloads
     constructor(action: Consumer<T>, priority: Int = -50, target: Class<T>) : this(
         target.kotlin, priority, action::accept
@@ -68,8 +69,8 @@ inline fun <reified T : Any> listener(
 }
 
 /** Implementation of [Listener] that uses an async/await function as its action */
-open class AsyncListener<T : Any> @PublishedApi internal constructor(
-    override val target: KClass<T>, override val priority: Int, protected val action: suspend (T) -> Unit
+class AsyncListener<T : Any> @PublishedApi internal constructor(
+    override val target: KClass<T>, override val priority: Int, internal val action: suspend (T) -> Unit
 ) : Listener<T> {
     override operator fun invoke(param: T) {
         scope.launch { action(param) }

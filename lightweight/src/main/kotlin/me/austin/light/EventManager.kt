@@ -1,8 +1,5 @@
 package me.austin.light
 
-import java.util.*
-import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
 import kotlin.reflect.KClass
 
 /**
@@ -32,16 +29,23 @@ class EventManager(private val recursive: Boolean = true) {
      */
     inline fun <reified T : Any> register(noinline action: (T) -> Unit) {
         synchronized(writeSync) {
-            val array = this.registry[T::class] as? Array<out (T) -> Unit>
+            val array = this.registry[T::class]
 
-            if (array == null) {
+            if (array === null) {
                 this.registry[T::class] = arrayOf(action) as Array<out (Any) -> Unit>
             } else if (!array.contains(action)) {
-                this.registry[T::class] = when(array.size) {
-                    1 -> arrayOf(array[0], action)
-                    2 -> arrayOf(array[0], array[1], action)
+                this.registry[T::class] = when (array.size) {
+                    1 -> {
+                        arrayOf(array[0], action)
+                    }
+                    2 -> {
+                        arrayOf(array[0], array[1], action)
+                    }
+                    3 -> {
+                        arrayOf(array[0], array[1], array[2], action)
+                    }
                     else -> {
-                        val fin = arrayOfNulls<(T) -> Unit>(array.size + 1)
+                        val fin = Array<((T) -> Unit)?>(array.size - 1) { null }
 
                         for (i in array.indices) {
                             fin[i] = array[i]
@@ -63,11 +67,13 @@ class EventManager(private val recursive: Boolean = true) {
     inline fun <reified T : Any> unregister(noinline action: (T) -> Unit) {
         synchronized(writeSync) {
             this.registry[T::class]?.let {
-                if (it.contains(action)) {
+                val count = it.count(action::equals)
+
+                if (count > 0) {
                     if (it.size == 1) {
                         this.registry.remove(T::class)
                     } else {
-                        val array = Array<((T) -> Unit)?>(it.size - 1) { null }
+                        val array = Array<((T) -> Unit)?>(it.size - count) { null }
                         var index = 0
 
                         for (element in it) {
@@ -87,6 +93,8 @@ class EventManager(private val recursive: Boolean = true) {
     /**
      * For dispatching events
      *
+     * @see <a href="https://github.com/x4e/EventDispatcher/">cookiedragon event bus for my inspiration</a>
+     *
      * @param event event to be posted to all registered actions
      */
     fun post(event: Any) {
@@ -97,8 +105,7 @@ class EventManager(private val recursive: Boolean = true) {
         }
 
         if (this.recursive) {
-            var clazz: Class<*>? = event.javaClass.superclass
-
+            var clazz = event.javaClass.superclass
             while (clazz != null) {
                 this.registry[event::class]?.let {
                     for (action in it) {
@@ -108,20 +115,5 @@ class EventManager(private val recursive: Boolean = true) {
                 clazz = clazz.superclass
             }
         }
-    }
-
-    /**
-     * This is copied from [<a href="https://github.com/x4e/EventDispatcher/">cookiedragon</a>]
-     * @param recursive if we should also include superclasses of the class
-     * @return immutable list of the class and all of its superclasses in order if [recursive] is set to true
-     */
-    private fun KClass<*>.getClasses(recursive: Boolean): List<KClass<*>> {
-        val classes = mutableListOf(this)
-        var clazz: Class<*>? = this.java.superclass
-        while (recursive && clazz != null) {
-            classes.add(clazz.kotlin)
-            clazz = clazz.superclass
-        }
-        return classes.toList()
     }
 }
