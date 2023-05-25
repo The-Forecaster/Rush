@@ -38,12 +38,15 @@ class EventManager(private val recursive: Boolean = true) {
                     1 -> {
                         arrayOf(array[0], action)
                     }
+
                     2 -> {
                         arrayOf(array[0], array[1], action)
                     }
+
                     3 -> {
                         arrayOf(array[0], array[1], array[2], action)
                     }
+
                     else -> {
                         val fin = Array<((T) -> Unit)?>(array.size - 1) { null }
 
@@ -66,25 +69,21 @@ class EventManager(private val recursive: Boolean = true) {
      */
     inline fun <reified T : Any> unregister(noinline action: (T) -> Unit) {
         synchronized(writeSync) {
-            this.registry[T::class]?.let {
-                val count = it.count(action::equals)
+            val array = this.registry[T::class]
 
-                if (count > 0) {
-                    if (it.size == 1) {
-                        this.registry.remove(T::class)
-                    } else {
-                        val array = Array<((T) -> Unit)?>(it.size - count) { null }
-                        var index = 0
+            if (array != null) {
+                if (array.size > 1) {
+                    val fin = Array<((T) -> Unit)?>(array.size - 1) { null }
+                    var index = 0
 
-                        for (element in it) {
-                            if (action != element) {
-                                array[index] = element
-                                index++
-                            }
+                    for (element in array) {
+                        if (action != element) {
+                            fin[index] = element
+                            index++
                         }
-
-                        this.registry[T::class] = array as Array<out (Any) -> Unit>
                     }
+
+                    this.registry[T::class] = fin as Array<out (Any) -> Unit>
                 }
             }
         }
