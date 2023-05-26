@@ -29,7 +29,6 @@ interface Listener<T : Any> {
 class LambdaListener<T : Any> @PublishedApi internal constructor(
     override val target: KClass<T>, override val priority: Int, internal val action: (T) -> Unit
 ) : Listener<T> {
-
     @JvmOverloads
     constructor(action: Consumer<T>, priority: Int = -50, target: Class<T>) : this(
         target.kotlin, priority, action::accept

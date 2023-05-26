@@ -29,12 +29,13 @@ private val KCallable<*>.isListener: Boolean
 
 private val <T : Any> KClass<T>.listeners: List<KCallable<Listener<*>>>
     get() {
-        return ((declaredMembers + this.superclasses.flatMap { it.declaredMembers })
+        return (declaredMembers + this.superclasses.flatMap { it.declaredMembers })
             // This cast will never fail
-            .filter(KCallable<*>::isListener) as List<KCallable<Listener<*>>>)
+            .filter(KCallable<*>::isListener) as List<KCallable<Listener<*>>>
     }
 
-internal val Any.listeners: ArrayList<Listener<*>>
+// weird down-conversion but I think it's optimal
+internal val Any.listeners: List<Listener<*>>
     get() {
         return this::class.listeners.mapTo(ArrayList(this::class.listeners.size)) {
             it.handleCall(this)
@@ -45,11 +46,5 @@ private fun <T> KCallable<T>.handleCall(receiver: Any? = null): T {
     val accessible = this.isAccessible
     this.isAccessible = true
 
-    return try {
-        call(receiver)
-    } catch (e: Throwable) {
-        call()
-    } finally {
-        this.isAccessible = accessible
-    }
+    return try { call(receiver) } catch (e: Throwable) { call() } finally { this.isAccessible = accessible }
 }

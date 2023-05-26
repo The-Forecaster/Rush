@@ -29,12 +29,12 @@ class EventManager(private val recursive: Boolean = true) {
      */
     inline fun <reified T : Any> register(noinline action: (T) -> Unit) {
         synchronized(writeSync) {
-            val array = this.registry[T::class]
+            val array = registry[T::class]
 
             if (array === null) {
-                this.registry[T::class] = arrayOf(action) as Array<out (Any) -> Unit>
+                registry[T::class] = arrayOf(action) as Array<out (Any) -> Unit>
             } else if (!array.contains(action)) {
-                this.registry[T::class] = when (array.size) {
+                registry[T::class] = when (array.size) {
                     1 -> {
                         arrayOf(array[0], action)
                     }
@@ -69,7 +69,7 @@ class EventManager(private val recursive: Boolean = true) {
      */
     inline fun <reified T : Any> unregister(noinline action: (T) -> Unit) {
         synchronized(writeSync) {
-            val array = this.registry[T::class]
+            val array = registry[T::class]
 
             if (array != null) {
                 if (array.size > 1) {
@@ -83,7 +83,7 @@ class EventManager(private val recursive: Boolean = true) {
                         }
                     }
 
-                    this.registry[T::class] = fin as Array<out (Any) -> Unit>
+                    registry[T::class] = fin as Array<out (Any) -> Unit>
                 }
             }
         }
@@ -97,16 +97,15 @@ class EventManager(private val recursive: Boolean = true) {
      * @param event event to be posted to all registered actions
      */
     fun post(event: Any) {
-        this.registry[event::class]?.let {
+        registry[event::class]?.let {
             for (action in it) {
                 action(event)
             }
         }
-
-        if (this.recursive) {
+        if (recursive) {
             var clazz = event.javaClass.superclass
             while (clazz != null) {
-                this.registry[event::class]?.let {
+                registry[event::class]?.let {
                     for (action in it) {
                         action(event)
                     }

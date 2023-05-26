@@ -136,7 +136,7 @@ class EventBus : IEventBus {
     private val cache = ConcurrentHashMap<Any, List<Listener<*>>>()
 
     override fun register(listener: Listener<*>) {
-        this.registry.getOrPut(listener.target, ::CopyOnWriteArrayList).let {
+        registry.getOrPut(listener.target, ::CopyOnWriteArrayList).let {
             synchronized(it) {
                 if (it.contains(listener)) return
 
@@ -154,7 +154,7 @@ class EventBus : IEventBus {
     }
 
     override fun unregister(listener: Listener<*>) {
-        this.registry[listener.target]?.let {
+        registry[listener.target]?.let {
             synchronized(it) {
                 it.remove(listener)
             }
@@ -162,19 +162,19 @@ class EventBus : IEventBus {
     }
 
     override fun register(subscriber: Any) {
-        for (listener in this.cache.getOrPut(subscriber, subscriber::listeners)) {
-            this.register(listener)
+        for (listener in cache.getOrPut(subscriber, subscriber::listeners)) {
+            register(listener)
         }
     }
 
     override fun unregister(subscriber: Any) {
         for (listener in subscriber.listeners) {
-            this.unregister(listener)
+            unregister(listener)
         }
     }
 
     override fun <T : Any> dispatch(event: T) {
-        this.listWith(event) {
+        listWith(event) {
             for (listener in it) {
                 listener(event)
             }
@@ -189,7 +189,7 @@ class EventBus : IEventBus {
      * @return the event passed through
      */
     fun <T : Cancellable> dispatch(event: T): T {
-        this.listWith(event) {
+        listWith(event) {
             for (listener in it) {
                 listener(event)
 
@@ -208,9 +208,7 @@ class EventBus : IEventBus {
      * @param event event to call from [registry]
      * @param block the code block to call if the list exists
      */
-    private fun <T : Any> listWith(event: T, block: (MutableList<Listener<T>>) -> Unit) {
-        (registry[event::class] as? MutableList<Listener<T>>)?.let {
-            block(it)
-        }
+    private fun <T : Any, R> listWith(event: T, block: (MutableList<Listener<T>>) -> R): R? {
+        return (registry[event::class] as? MutableList<Listener<T>>)?.let(block::invoke)
     }
 }
