@@ -167,10 +167,10 @@ class EventBus(private val recursive: Boolean = false) : IEventBus {
         this.registry[listener.target]?.let {
             synchronized(it) {
                 it.remove(listener)
-            }
 
-            if (it.size == 0) {
-                this.registry.remove(listener.target)
+                if (it.size == 0) {
+                    this.registry.remove(listener.target)
+                }
             }
         }
     }
@@ -211,7 +211,7 @@ class EventBus(private val recursive: Boolean = false) : IEventBus {
      *
      * @param T the type of the event posted
      * @param event the event which will be posted
-     * @return the event passed through
+     * @return [event]
      */
     fun <T : Cancellable> dispatch(event: T): T {
         this.post(event::class) {

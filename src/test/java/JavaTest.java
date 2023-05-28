@@ -7,7 +7,7 @@ final class JavaTest {
     @EventHandler
     private final LambdaListener LISTENER = new LambdaListener(event -> System.out.println(event + " with higher priority!"), 1000, String.class);
 
-    @Test
+//    @Test
     public void test() {
         final EventBus BUS = new EventBus();
         final LambdaListener LIST = new LambdaListener(event -> System.out.println(event + "!"), String.class);

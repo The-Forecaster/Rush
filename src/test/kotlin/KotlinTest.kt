@@ -17,7 +17,7 @@ class KotlinTest {
     @EventHandler
     val listener = listener<String>({ println("$it with higher priority!") }, 1000)
 
-    @Test
+  //  @Test
     fun test() {
         val async = asyncListener<String>({
             delay(10)

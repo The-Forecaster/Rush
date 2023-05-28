@@ -50,9 +50,7 @@ class EventManager(private val recursive: Boolean = true) {
                     else -> {
                         val fin = Array<((T) -> Unit)?>(array.size - 1) { null }
 
-                        for (i in array.indices) {
-                            fin[i] = array[i]
-                        }
+                        System.arraycopy(array, 0, fin, 0, array.size)
 
                         fin[fin.size - 1] = action
                         fin
@@ -84,6 +82,8 @@ class EventManager(private val recursive: Boolean = true) {
                     }
 
                     this.registry[T::class] = fin as Array<out (Any) -> Unit>
+                } else {
+                    this.registry.remove(T::class)
                 }
             }
         }
@@ -106,7 +106,7 @@ class EventManager(private val recursive: Boolean = true) {
         if (recursive) {
             var clazz = event.javaClass.superclass
             while (clazz != null) {
-                this.registry[event::class]?.let {
+                this.registry[clazz.kotlin]?.let {
                     for (action in it) {
                         action(event)
                     }

@@ -12,10 +12,10 @@ import kotlin.reflect.KClass
  * @since 2022
  */
 interface Listener {
-    /** the class of the target event */
+    /** The class of the target event */
     val target: KClass<*>
 
-    /** the priority that the listener will be called upon(use wisely) */
+    /** The priority that the listener will be called upon(use wisely) */
     val priority: Int
 
     /**
@@ -33,18 +33,18 @@ interface Listener {
  *
  * @param target class which the listener will accept
  * @param priority how highly this listener should be prioritized
- * @param lambda action which will be called when an event is posted
+ * @param action action which will be called when an event is posted
  */
 class LambdaListener @PublishedApi internal constructor(
-    override val target: KClass<*>, override val priority: Int, lambda: (Nothing) -> Unit
+    override val target: KClass<*>, override val priority: Int, action: (Nothing) -> Unit
 ) : Listener {
     /**
      * Real action that will be called when an event is posted
      */
-    internal val action = lambda as (Any) -> Unit
+    internal val action = action as (Any) -> Unit
 
     /**
-     * Creates a listener, constructor for java
+     * Constructor for java
      *
      * @param action consumer which will be called when an event is posted
      * @param priority how highly this listener should be prioritized
@@ -95,18 +95,18 @@ inline fun <reified T : Any> listener(
  *
  * @param target class which the listener will accept
  * @param priority how highly this listener should be prioritized
- * @param lambda action which will be called when an event is posted
+ * @param action action which will be called when an event is posted
  */
 class AsyncListener @PublishedApi internal constructor(
     override val target: KClass<*>,
     override val priority: Int,
     private val scope: CoroutineScope,
-    lambda: suspend (Nothing) -> Unit
+    action: suspend (Nothing) -> Unit
 ) : Listener {
     /**
      * Real action that will be called when an event is posted
      */
-    internal val action = lambda as (Any) -> Unit
+    internal val action = action as (Any) -> Unit
 
     override operator fun invoke(param: Any) {
         scope.launch { action(param) }
