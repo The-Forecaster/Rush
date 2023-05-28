@@ -9,22 +9,22 @@ import org.junit.jupiter.api.Test
 
 class KotlinTest {
     @EventHandler
-    val listener = listener<String>({ println("$it with higher priority!") }, 1000)
-
-    @EventHandler
     val async = asyncListener<String> {
         delay(1000)
         println("$it that's delayed for longer!!")
     }
 
+    @EventHandler
+    val listener = listener<String>({ println("$it with higher priority!") }, 1000)
+
     @Test
     fun test() {
-        val listener = listener<String> { println("$it!") }
-
         val async = asyncListener<String>({
             delay(10)
             println("$it that's delayed!")
         }, 200)
+
+        val listener = listener<String> { println("$it!") }
 
         with(EventBus()) {
             registerAll(listener, async)

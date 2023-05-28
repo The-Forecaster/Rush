@@ -28,13 +28,13 @@ class EventManager(private val recursive: Boolean = true) {
      * @param action the lambda to be added
      */
     inline fun <reified T : Any> register(noinline action: (T) -> Unit) {
-        synchronized(writeSync) {
-            val array = registry[T::class]
+        synchronized(this.writeSync) {
+            val array = this.registry[T::class]
 
             if (array === null) {
-                registry[T::class] = arrayOf(action) as Array<out (Any) -> Unit>
+                this.registry[T::class] = arrayOf(action) as Array<out (Any) -> Unit>
             } else if (!array.contains(action)) {
-                registry[T::class] = when (array.size) {
+                this.registry[T::class] = when (array.size) {
                     1 -> {
                         arrayOf(array[0], action)
                     }
@@ -69,7 +69,7 @@ class EventManager(private val recursive: Boolean = true) {
      */
     inline fun <reified T : Any> unregister(noinline action: (T) -> Unit) {
         synchronized(writeSync) {
-            val array = registry[T::class]
+            val array = this.registry[T::class]
 
             if (array != null) {
                 if (array.size > 1) {
@@ -83,7 +83,7 @@ class EventManager(private val recursive: Boolean = true) {
                         }
                     }
 
-                    registry[T::class] = fin as Array<out (Any) -> Unit>
+                    this.registry[T::class] = fin as Array<out (Any) -> Unit>
                 }
             }
         }
@@ -97,15 +97,16 @@ class EventManager(private val recursive: Boolean = true) {
      * @param event event to be posted to all registered actions
      */
     fun post(event: Any) {
-        registry[event::class]?.let {
+        this.registry[event::class]?.let {
             for (action in it) {
                 action(event)
             }
         }
+
         if (recursive) {
             var clazz = event.javaClass.superclass
             while (clazz != null) {
-                registry[event::class]?.let {
+                this.registry[event::class]?.let {
                     for (action in it) {
                         action(event)
                     }

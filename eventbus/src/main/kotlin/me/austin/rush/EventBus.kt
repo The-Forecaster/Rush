@@ -3,6 +3,7 @@ package me.austin.rush
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.reflect.KClass
+import kotlin.reflect.full.superclasses
 
 /**
  * Basic structure for an event dispatcher
@@ -16,14 +17,14 @@ interface IEventBus {
      *
      * @param listener instance of listener<T> to subscribe
      */
-    fun register(listener: Listener<*>)
+    fun register(listener: Listener)
 
     /**
      * Adds all listeners to the registry
      *
      * @param listeners all listeners you want to be added
      */
-    fun registerAll(vararg listeners: Listener<*>) {
+    fun registerAll(vararg listeners: Listener) {
         for (listener in listeners) {
             this.register(listener)
         }
@@ -34,7 +35,7 @@ interface IEventBus {
      *
      * @param listeners the iterable of listeners you want to be added
      */
-    fun registerAll(listeners: Iterable<Listener<*>>) {
+    fun registerAll(listeners: Iterable<Listener>) {
         for (listener in listeners) {
             this.register(listener)
         }
@@ -45,7 +46,7 @@ interface IEventBus {
      *
      * @param listener listener object to be removed
      */
-    fun unregister(listener: Listener<*>)
+    fun unregister(listener: Listener)
 
     /**
      * Removes all listeners from the registry
@@ -53,7 +54,7 @@ interface IEventBus {
      * @param listeners listener objects you want to be removed
      * @see unregister
      */
-    fun unregisterAll(vararg listeners: Listener<*>) {
+    fun unregisterAll(vararg listeners: Listener) {
         for (listener in listeners) {
             this.unregister(listener)
         }
@@ -65,7 +66,7 @@ interface IEventBus {
      * @param listeners iterable of listeners you want to be removed
      * @see unregister
      */
-    fun unregisterAll(listeners: Iterable<Listener<*>>) {
+    fun unregisterAll(listeners: Iterable<Listener>) {
         for (listener in listeners) {
             this.unregister(listener)
         }
@@ -110,9 +111,8 @@ interface IEventBus {
     /**
      * Post an event to be processed by the subscribed methods or listener objects
      *
-     * @param <T> event type
+     * @param T event type
      * @param event object to post
-     *
      */
     fun <T : Any> dispatch(event: T)
 }
@@ -122,28 +122,38 @@ interface IEventBus {
  *
  * @author Austin
  * @since 2022
+ *
+ * @param recursive if this eventbus will post superclasses of events posted
  */
-class EventBus : IEventBus {
+class EventBus(private val recursive: Boolean = false) : IEventBus {
     /**
      * Map that will be used to store registered listeners and their targets
      *
      * The key-set will hold all stored targets of listeners
      * The value-set will hold the list of listeners corresponding to their respective targets
      */
-    private val registry = ConcurrentHashMap<KClass<*>, MutableList<Listener<*>>>()
+    private val registry = ConcurrentHashMap<KClass<*>, MutableList<Listener>>()
 
-    // Using this here, so we don't have to make more reflection calls
-    private val cache = ConcurrentHashMap<Any, List<Listener<*>>>()
+    /**
+     * Map that is used to reduce the amount of reflection calls we have to make
+     *
+     * The Key set stores objects and the value set hold the list of listeners in that object
+     */
+    private val cache = ConcurrentHashMap<Any, List<Listener>>()
 
-    override fun register(listener: Listener<*>) {
-        registry.getOrPut(listener.target, ::CopyOnWriteArrayList).let {
+    override fun register(listener: Listener) {
+        this.registry.getOrPut(listener.target) { CopyOnWriteArrayList() }.let {
             synchronized(it) {
-                if (it.contains(listener)) return
+                if (it.contains(listener)) {
+                    return
+                }
 
                 var index = 0
 
                 while (index < it.size) {
-                    if (it[index].priority < listener.priority) break
+                    if (it[index].priority < listener.priority) {
+                        break
+                    }
 
                     index++
                 }
@@ -153,30 +163,44 @@ class EventBus : IEventBus {
         }
     }
 
-    override fun unregister(listener: Listener<*>) {
-        registry[listener.target]?.let {
+    override fun unregister(listener: Listener) {
+        this.registry[listener.target]?.let {
             synchronized(it) {
                 it.remove(listener)
+            }
+
+            if (it.size == 0) {
+                this.registry.remove(listener.target)
             }
         }
     }
 
     override fun register(subscriber: Any) {
-        for (listener in cache.getOrPut(subscriber, subscriber::listeners)) {
-            register(listener)
+        for (listener in this.cache.getOrPut(subscriber) { subscriber.listeners }) {
+            this.register(listener)
         }
     }
 
     override fun unregister(subscriber: Any) {
         for (listener in subscriber.listeners) {
-            unregister(listener)
+            this.unregister(listener)
         }
     }
 
     override fun <T : Any> dispatch(event: T) {
-        listWith(event) {
+        this.post(event::class) {
             for (listener in it) {
                 listener(event)
+            }
+        }
+
+        if (this.recursive) {
+            for (clazz in event::class.superclasses) {
+                this.post(clazz) {
+                    for (listener in it) {
+                        listener(event)
+                    }
+                }
             }
         }
     }
@@ -185,16 +209,31 @@ class EventBus : IEventBus {
      * Dispatches an event that is cancellable.
      * When the event is cancelled it will not be posted to any listeners after
      *
+     * @param T the type of the event posted
      * @param event the event which will be posted
      * @return the event passed through
      */
     fun <T : Cancellable> dispatch(event: T): T {
-        listWith(event) {
+        this.post(event::class) {
             for (listener in it) {
                 listener(event)
 
                 if (event.isCancelled) {
                     break
+                }
+            }
+        }
+
+        if (this.recursive) {
+            for (clazz in event::class.superclasses) {
+                this.post(clazz) {
+                    for (listener in it) {
+                        listener(event)
+
+                        if (event.isCancelled) {
+                            break
+                        }
+                    }
                 }
             }
         }
@@ -205,10 +244,16 @@ class EventBus : IEventBus {
     /**
      * For removing code duplication
      *
+     * @param T type that will be posted to
+     * @param R return type
      * @param event event to call from [registry]
      * @param block the code block to call if the list exists
+     *
+     * @return the result of the block if the class exists in the registry
      */
-    private fun <T : Any, R> listWith(event: T, block: (MutableList<Listener<T>>) -> R): R? {
-        return (registry[event::class] as? MutableList<Listener<T>>)?.let(block::invoke)
+    private fun <T : Any, R> post(event: KClass<T>, block: (MutableList<Listener>) -> R): R? {
+        return registry[event]?.let {
+            block(it)
+        }
     }
 }
