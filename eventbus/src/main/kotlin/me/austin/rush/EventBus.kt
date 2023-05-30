@@ -142,6 +142,7 @@ class EventBus(private val recursive: Boolean = false) : IEventBus {
     private val cache = ConcurrentHashMap<Any, List<Listener>>()
 
     override fun register(listener: Listener) {
+        // TODO speed up the registering process
         this.registry.getOrPut(listener.target) { CopyOnWriteArrayList() }.let {
             synchronized(it) {
                 if (it.contains(listener)) {
@@ -149,7 +150,6 @@ class EventBus(private val recursive: Boolean = false) : IEventBus {
                 }
 
                 var index = 0
-
                 while (index < it.size) {
                     if (it[index].priority < listener.priority) {
                         break
@@ -164,6 +164,7 @@ class EventBus(private val recursive: Boolean = false) : IEventBus {
     }
 
     override fun unregister(listener: Listener) {
+        // TODO speed up the unregistering process
         this.registry[listener.target]?.let {
             synchronized(it) {
                 it.remove(listener)
@@ -176,6 +177,7 @@ class EventBus(private val recursive: Boolean = false) : IEventBus {
     }
 
     override fun register(subscriber: Any) {
+        // TODO subscriber.listeners could probably be inlined somewhat
         for (listener in this.cache.getOrPut(subscriber) { subscriber.listeners }) {
             this.register(listener)
         }
@@ -188,19 +190,9 @@ class EventBus(private val recursive: Boolean = false) : IEventBus {
     }
 
     override fun <T : Any> dispatch(event: T) {
-        this.post(event::class) {
+        this.post(event) {
             for (listener in it) {
                 listener(event)
-            }
-        }
-
-        if (this.recursive) {
-            for (clazz in event::class.superclasses) {
-                this.post(clazz) {
-                    for (listener in it) {
-                        listener(event)
-                    }
-                }
             }
         }
     }
@@ -214,26 +206,12 @@ class EventBus(private val recursive: Boolean = false) : IEventBus {
      * @return [event]
      */
     fun <T : Cancellable> dispatch(event: T): T {
-        this.post(event::class) {
+        this.post(event) {
             for (listener in it) {
                 listener(event)
 
                 if (event.isCancelled) {
                     break
-                }
-            }
-        }
-
-        if (this.recursive) {
-            for (clazz in event::class.superclasses) {
-                this.post(clazz) {
-                    for (listener in it) {
-                        listener(event)
-
-                        if (event.isCancelled) {
-                            break
-                        }
-                    }
                 }
             }
         }
@@ -245,15 +223,20 @@ class EventBus(private val recursive: Boolean = false) : IEventBus {
      * For removing code duplication
      *
      * @param T type that will be posted to
-     * @param R return type
      * @param event event to call from [registry]
      * @param block the code block to call if the list exists
-     *
-     * @return the result of the block if the class exists in the registry
      */
-    private fun <T : Any, R> post(event: KClass<T>, block: (MutableList<Listener>) -> R): R? {
-        return registry[event]?.let {
+    private fun <T : Any> post(event: T, block: (MutableList<Listener>) -> Unit) {
+        this.registry[event::class]?.let {
             block(it)
+        }
+
+        if (this.recursive) {
+            for (clazz in event::class.superclasses) {
+                this.registry[clazz]?.let {
+                    block(it)
+                }
+            }
         }
     }
 }

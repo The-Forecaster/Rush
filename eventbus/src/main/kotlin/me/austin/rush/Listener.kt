@@ -109,6 +109,7 @@ class AsyncListener @PublishedApi internal constructor(
     /**
      * Real action that will be called when an event is posted
      */
+    // This cast should never ever fail
     internal val action = action as suspend (Any) -> Unit
 
     override operator fun invoke(param: Any) {
