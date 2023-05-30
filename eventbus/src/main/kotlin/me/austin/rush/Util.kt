@@ -24,40 +24,24 @@ annotation class EventHandler
  */
 val defaultScope = CoroutineScope(Dispatchers.Default)
 
-// Most of this is inspired from bush https://github.com/therealbush/eventbus-kotlin, check him out if you want to see actually good code
-
-/**
- * Returns if this [KCallable] is a valid listener
- */
-private val KCallable<*>.isListener: Boolean
-    get() {
-        return this.hasAnnotation<EventHandler>() && this.returnType.isSubtypeOf(typeOf<Listener>())
-    }
-
-/**
- * Returns a [List] of KCallable of listeners
- */
-private val KClass<*>.listeners: List<KCallable<Listener>>
-    get() {
-        val out = mutableListOf<KCallable<Listener>>()
-
-        for (callable in declaredMembers + this.superclasses.flatMap { it.declaredMembers }) {
-            if (callable.isListener) {
-                out.add(callable as KCallable<Listener>)
-            }
-        }
-
-        return out.toList()
-    }
+// Check out https://github.com/therealbush/eventbus-kotlin if you want to see where this logic comes from
 
 /**
  * Returns a [List] of listeners inside of this object
  */
 internal val Any.listeners: List<Listener>
     get() {
-        return this::class.listeners.mapTo(ArrayList(this::class.listeners.size)) {
-            it.handleCall(this)
+        val klass = this::class
+
+        val out = mutableListOf<Listener>()
+
+        for (callable in klass.declaredMembers + klass.superclasses.flatMap { it.declaredMembers }) {
+            if (callable.hasAnnotation<EventHandler>() && callable.returnType.isSubtypeOf(typeOf<Listener>())) {
+                out.add(callable.handleCall(this) as Listener)
+            }
         }
+
+        return out
     }
 
 /**

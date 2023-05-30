@@ -41,19 +41,8 @@ class LambdaListener @PublishedApi internal constructor(
     /**
      * Real action that will be called when an event is posted
      */
+    // This cast should never fail
     internal val action = action as (Any) -> Unit
-
-    /**
-     * Constructor for java
-     *
-     * @param action consumer which will be called when an event is posted
-     * @param priority how highly this listener should be prioritized
-     * @param target class which the listener will accept
-     */
-    @JvmOverloads
-    constructor(action: Consumer<*>, priority: Int = -50, target: Class<*>) : this(
-        target.kotlin, priority, action::accept
-    )
 
     override operator fun invoke(param: Any) {
         this.action(param)
@@ -89,24 +78,38 @@ inline fun <reified T : Any> listener(
 }
 
 /**
+ * Constructor for java
+ *
+ * @param action consumer which will be called when an event is posted
+ * @param priority how highly this listener should be prioritized
+ * @param target class which the listener will accept
+ */
+@JvmOverloads
+fun <T : Any> listener(target: Class<T>, priority: Int = -50, action: Consumer<T>): LambdaListener {
+    return LambdaListener(target.kotlin, priority, action::accept)
+}
+
+/**
  * Implementation of [Listener] that uses an asynchronous lambda function as its target
  *
  * @constructor Creates a listener with the specified parameters
  *
  * @param target class which the listener will accept
  * @param priority how highly this listener should be prioritized
+ * @param scope [CoroutineScope] to call the lambda in. Will default to [defaultScope]
  * @param action action which will be called when an event is posted
  */
 class AsyncListener @PublishedApi internal constructor(
-    override val target: KClass<*>,
-    override val priority: Int,
-    private val scope: CoroutineScope,
-    action: suspend (Nothing) -> Unit
+    override val target: KClass<*>, override val priority: Int,
+    /**
+     * [CoroutineScope] to call the lambda in. Will default to [defaultScope]
+     */
+    private val scope: CoroutineScope, action: suspend (Nothing) -> Unit
 ) : Listener {
     /**
      * Real action that will be called when an event is posted
      */
-    internal val action = action as (Any) -> Unit
+    internal val action = action as suspend (Any) -> Unit
 
     override operator fun invoke(param: Any) {
         scope.launch { action(param) }
@@ -131,7 +134,8 @@ inline fun <reified T : Any> asyncListener(noinline action: suspend (T) -> Unit)
  * @param T type the lambda will accept
  * @param action consumer the listeners will call when an event is posted
  * @param priority the priority which this listener will be called when an event is posted
- * @param target class that the listener will listen for
+ * @param target class that the listener will listen for. Will default to [T]
+ * @param scope [CoroutineScope] to call the lambda in. Will default to [defaultScope]
  *
  * @return [AsyncListener] with the action
  */

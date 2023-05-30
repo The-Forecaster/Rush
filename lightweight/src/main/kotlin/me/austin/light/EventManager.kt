@@ -1,5 +1,6 @@
 package me.austin.light
 
+import java.util.*
 import kotlin.reflect.KClass
 
 /**
@@ -33,7 +34,7 @@ class EventManager(private val recursive: Boolean = true) {
 
             if (array === null) {
                 this.registry[T::class] = arrayOf(action) as Array<out (Any) -> Unit>
-            } else if (!array.contains(action)) {
+            } else if (!array.contains(action)){
                 this.registry[T::class] = when (array.size) {
                     1 -> {
                         arrayOf(array[0], action)
@@ -48,12 +49,12 @@ class EventManager(private val recursive: Boolean = true) {
                     }
 
                     else -> {
-                        val fin = Array<((T) -> Unit)?>(array.size - 1) { null }
+                        val out = Array<((T) -> Unit)?>(array.size + 1) { null }
 
-                        System.arraycopy(array, 0, fin, 0, array.size)
+                        System.arraycopy(array, 0, out, 0, array.size)
 
-                        fin[fin.size - 1] = action
-                        fin
+                        out[out.size - 1] = action
+                        out
                     }
                 } as Array<out (Any) -> Unit>
             }
@@ -71,17 +72,17 @@ class EventManager(private val recursive: Boolean = true) {
 
             if (array != null) {
                 if (array.size > 1) {
-                    val fin = Array<((T) -> Unit)?>(array.size - 1) { null }
+                    val out = Array<((T) -> Unit)?>(array.size - 1) { null }
                     var index = 0
 
                     for (element in array) {
                         if (action != element) {
-                            fin[index] = element
+                            out[index] = element
                             index++
                         }
                     }
 
-                    this.registry[T::class] = fin as Array<out (Any) -> Unit>
+                    this.registry[T::class] = out as Array<out (Any) -> Unit>
                 } else {
                     this.registry.remove(T::class)
                 }
@@ -104,7 +105,7 @@ class EventManager(private val recursive: Boolean = true) {
         }
 
         if (recursive) {
-            var clazz = event.javaClass.superclass
+            var clazz: Class<*>? = event.javaClass.superclass
             while (clazz != null) {
                 this.registry[clazz.kotlin]?.let {
                     for (action in it) {

@@ -21,13 +21,13 @@ dependencies {
     testImplementation(project(":lightweight"))
 }
 
+kotlin {
+    jvmToolchain(17)
+}
+
 tasks {
     test {
         testLogging.showStandardStreams = true
         useJUnitPlatform()
     }
-}
-
-kotlin {
-    jvmToolchain(17)
 }
