@@ -1,28 +1,29 @@
 package me.austin.rush
 
+import java.util.Arrays
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.reflect.KClass
 import kotlin.reflect.full.superclasses
 
 /**
- * Basic structure for an event dispatcher
+ * Basic structure for an event dispatcher.
  *
  * @author Austin
  * @since 2022
  */
 interface IEventBus {
     /**
-     * Adds the listener into the registry
+     * Adds the listener into the registry.
      *
-     * @param listener instance of listener<T> to subscribe
+     * @param listener Instance of [Listener] to subscribe.
      */
     fun register(listener: Listener)
 
     /**
-     * Adds all listeners to the registry
+     * Adds all [Listener] objects to the registry.
      *
-     * @param listeners all listeners you want to be added
+     * @param listeners All [Listener] objects you want to be added.
      */
     fun registerAll(vararg listeners: Listener) {
         for (listener in listeners) {
@@ -31,9 +32,9 @@ interface IEventBus {
     }
 
     /**
-     * Adds all listeners in an iterable to the registry
+     * Adds all [Listener] objects in an iterable to the registry.
      *
-     * @param listeners the iterable of listeners you want to be added
+     * @param listeners The [Iterable] of [Listener] objects you want to be added.
      */
     fun registerAll(listeners: Iterable<Listener>) {
         for (listener in listeners) {
@@ -42,16 +43,16 @@ interface IEventBus {
     }
 
     /**
-     * Removes the listener from the registry
+     * Removes the listener from the registry.
      *
-     * @param listener listener object to be removed
+     * @param listener [Listener] object to be removed.
      */
     fun unregister(listener: Listener)
 
     /**
-     * Removes all listeners from the registry
+     * Removes all [Listener] objects from the registry.
      *
-     * @param listeners listener objects you want to be removed
+     * @param listeners [Listener] objects you want to be removed.
      * @see unregister
      */
     fun unregisterAll(vararg listeners: Listener) {
@@ -61,9 +62,9 @@ interface IEventBus {
     }
 
     /**
-     * Removes all listeners in an iterable from the registry
+     * Removes all [Listener] objects in an iterable from the registry.
      *
-     * @param listeners iterable of listeners you want to be removed
+     * @param listeners [Iterable] of [Listener] objects you want to be removed.
      * @see unregister
      */
     fun unregisterAll(listeners: Iterable<Listener>) {
@@ -73,16 +74,16 @@ interface IEventBus {
     }
 
     /**
-     * Adds all annotated listeners into the registry
+     * Adds all [EventHandler] annotated [Listener] objects into the registry.
      *
-     * @param subscriber object you want to be searched for listeners to be added to the registry
+     * @param subscriber Object you want to be searched for listeners to be added to the registry.
      */
     fun register(subscriber: Any)
 
     /**
-     * Adds all objects and their contained listeners to the registry
+     * Adds all objects and their contained [EventHandler] annotated [Listener] objects to the registry.
      *
-     * @param subscribers all subscribers you want to be added to the registry
+     * @param subscribers All objects you want to be added to the registry.
      */
     fun registerAll(vararg subscribers: Any) {
         for (subscriber in subscribers) {
@@ -91,16 +92,16 @@ interface IEventBus {
     }
 
     /**
-     * Removes all annotated listeners from the registry
+     * Removes all [EventHandler] annotated [Listener] objects from the registry.
      *
-     * @param subscriber event subscriber instance
+     * @param subscriber Event subscriber instance.
      */
     fun unregister(subscriber: Any)
 
     /**
-     * Removes all objects and their contained listeners to the registry
+     * Removes all objects and their contained [EventHandler] annotated [Listener] objects to the registry.
      *
-     * @param subscribers all subscribers you want removed from the registry
+     * @param subscribers All objects you want removed from the registry.
      */
     fun unregisterAll(vararg subscribers: Any) {
         for (subscriber in subscribers) {
@@ -109,71 +110,84 @@ interface IEventBus {
     }
 
     /**
-     * Post an event to be processed by the subscribed methods or listener objects
+     * Post an event to be processed by the subscribed methods or listener objects.
      *
-     * @param T event type
-     * @param event object to post
+     * @param T Event type.
+     * @param event Instance of [T] to post.
      */
     fun <T : Any> dispatch(event: T)
 }
 
 /**
- * Basic implementation of [IEventBus]
+ * Basic implementation of [IEventBus].
  *
  * @author Austin
  * @since 2022
  *
- * @param recursive if this eventbus will post superclasses of events posted
+ * @param recursive If this eventbus posts superclasses of events posted.
  */
-class EventBus(private val recursive: Boolean = false) : IEventBus {
+open class EventBus(private val recursive: Boolean = false) : IEventBus {
     /**
-     * Map that will be used to store registered listeners and their targets
+     * Map that will be used to store registered [Listener] objects and their targets.
      *
-     * The key-set will hold all stored targets of listeners
-     * The value-set will hold the list of listeners corresponding to their respective targets
+     * The key-set will hold all stored targets of [Listener] objects.
+     * The value-set will hold the list of [Listener] objects corresponding to their respective targets.
      */
     private val registry = ConcurrentHashMap<KClass<*>, MutableList<Listener>>()
 
     /**
-     * Map that is used to reduce the amount of reflection calls we have to make
+     * Map that is used to reduce the amount of reflection calls we have to make.
      *
-     * The Key set stores objects and the value set hold the list of listeners in that object
+     * The Key set stores objects and the value set hold the list of [Listener] in that object.
      */
     private val cache = ConcurrentHashMap<Any, List<Listener>>()
 
+    /**
+     * This is so we only ever have 1 write action going on at a time
+     */
+    private val writeSync = Any()
+
     override fun register(listener: Listener) {
         // TODO speed up the registering process
-        this.registry.getOrPut(listener.target) { CopyOnWriteArrayList() }.let {
-            synchronized(it) {
-                if (it.contains(listener)) {
-                    return
-                }
+        val list = this.registry[listener.target]
 
+        synchronized(writeSync) {
+            if (list == null) {
+                this.registry[listener.target] = CopyOnWriteArrayList(arrayOf(listener))
+            } else if (!list.contains(listener)) {
                 var index = 0
-                while (index < it.size) {
-                    if (it[index].priority < listener.priority) {
+
+                while (index < list.size) {
+                    if (list[index].priority < listener.priority) {
                         break
                     }
 
                     index++
                 }
 
-                it.add(index, listener)
+                list.add(index, listener)
+
+                this.registry[listener.target] = list
             }
         }
     }
 
     override fun unregister(listener: Listener) {
         // TODO speed up the unregistering process
-        this.registry[listener.target]?.let {
-            synchronized(it) {
-                it.remove(listener)
+        synchronized(writeSync) {
+            val list = this.registry[listener.target]
 
-                if (it.size == 0) {
+            if (list != null) {
+                list.remove(listener)
+
+                this.registry[listener.target] = list
+
+                if (list.size == 0) {
                     this.registry.remove(listener.target)
                 }
             }
         }
+
     }
 
     override fun register(subscriber: Any) {
@@ -184,8 +198,10 @@ class EventBus(private val recursive: Boolean = false) : IEventBus {
     }
 
     override fun unregister(subscriber: Any) {
-        for (listener in subscriber.listeners) {
-            this.unregister(listener)
+        this.cache[subscriber]?.let {
+            for (listener in it) {
+                this.unregister(listener)
+            }
         }
     }
 
@@ -199,13 +215,13 @@ class EventBus(private val recursive: Boolean = false) : IEventBus {
 
     /**
      * Dispatches an event that is cancellable.
-     * When the event is cancelled it will not be posted to any listeners after
+     * When the event is cancelled it will not be posted to any listeners after.
      *
-     * @param T the type of the event posted
-     * @param event the event which will be posted
-     * @return [event]
+     * @param T The type of the event posted.
+     * @param event the event which will be posted.
+     * @return [event].
      */
-    fun <T : Cancellable> dispatch(event: T): T {
+    open fun <T : Cancellable> dispatch(event: T): T {
         this.post(event) {
             for (listener in it) {
                 listener(event)
@@ -220,11 +236,11 @@ class EventBus(private val recursive: Boolean = false) : IEventBus {
     }
 
     /**
-     * For removing code duplication
+     * For removing code duplication.
      *
-     * @param T type that will be posted to
-     * @param event event to call from [registry]
-     * @param block the code block to call if the list exists
+     * @param T Type that will be posted to.
+     * @param event Event to call from [registry].
+     * @param block The code block to call if the list exists.
      */
     private fun <T : Any> post(event: T, block: (MutableList<Listener>) -> Unit) {
         this.registry[event::class]?.let {

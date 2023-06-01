@@ -4,15 +4,12 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlin.reflect.KCallable
 import kotlin.reflect.KClass
-import kotlin.reflect.full.declaredMembers
-import kotlin.reflect.full.hasAnnotation
-import kotlin.reflect.full.isSubtypeOf
-import kotlin.reflect.full.superclasses
+import kotlin.reflect.full.*
 import kotlin.reflect.jvm.isAccessible
 import kotlin.reflect.typeOf
 
 /**
- * Annotate a listener with this class to mark it for adding to the eventbus registry
+ * Annotate a listener with this class to mark it for adding to the eventbus registry.
  *
  * @author Austin
  * @since 2022
@@ -20,41 +17,47 @@ import kotlin.reflect.typeOf
 annotation class EventHandler
 
 /**
- * Default [CoroutineScope] which be called when an [AsyncListener] is called
+ * Default [CoroutineScope] which be called when an [AsyncListener] is called.
  */
 val defaultScope = CoroutineScope(Dispatchers.Default)
 
 // Check out https://github.com/therealbush/eventbus-kotlin if you want to see where this logic comes from
 
 /**
- * Returns a [List] of listeners inside of this object
+ * Using [KClass.members] only returns public members, and using [KClass.declaredMembers]
+ * doesn't return inherited members. This returns all members, private and inherited.
+ *
+ * @return All members, private and inherited.
  */
-internal val Any.listeners: List<Listener>
+internal val KClass<*>.allMembers: Sequence<KCallable<*>>
     get() {
-        val klass = this::class
-
-        val out = mutableListOf<Listener>()
-
-        for (callable in klass.declaredMembers + klass.superclasses.flatMap { it.declaredMembers }) {
-            if (callable.hasAnnotation<EventHandler>() && callable.returnType.isSubtypeOf(typeOf<Listener>())) {
-                out.add(callable.handleCall(this) as Listener)
-            }
-        }
-
-        return out
+        return (this.declaredMembers + this.allSuperclasses.flatMap { it.declaredMembers }).asSequence()
     }
 
 /**
- * Unwraps an object contained in a [KCallable]
+ * Unwraps the object referenced in a [KCallable].
  *
- * @param T Type of the [KCallable]
- * @param receiver Object containing the [KCallable] if it is non-static
+ * @param R Type of the [KCallable]
+ * @param receiver Object containing the [KCallable] if it is non-static.
  *
- * @return The object inside the [KCallable]
+ * @return The object referenced by the [KCallable].
  */
-private fun <T> KCallable<T>.handleCall(receiver: Any? = null): T {
+private fun <R> KCallable<R>.handleCall(receiver: Any? = null): R {
     val accessible = this.isAccessible
     this.isAccessible = true
-
+    // Doing this so we don't leak accessibility
     return try { call(receiver) } catch (e: Throwable) { call() } finally { this.isAccessible = accessible }
 }
+
+/**
+ * Finds all [Listener] objects inside this object.
+ *
+ * @return [List] of [Listener] objects inside this object.
+ */
+val Any.listeners: List<Listener>
+    get() {
+        return this::class.allMembers.filter {
+            it.hasAnnotation<EventHandler>() && it.returnType.withNullability(false)
+                .isSubtypeOf(typeOf<Listener>()) && it.valueParameters.isEmpty()
+        }.map { it.handleCall(this) as Listener }.toList()
+    }

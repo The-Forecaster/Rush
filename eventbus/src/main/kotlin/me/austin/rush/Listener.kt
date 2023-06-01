@@ -5,13 +5,14 @@ import kotlinx.coroutines.launch
 import java.util.function.Consumer
 import kotlin.reflect.KClass
 
+
 /**
  * Basic structure for an event listener and invoker.
  *
  * @author Austin
  * @since 2022
  */
-interface Listener {
+interface Listener : Comparable<Listener> {
     /** The class of the target event */
     val target: KClass<*>
 
@@ -24,6 +25,11 @@ interface Listener {
      * @param param event object that is being processed
      */
     operator fun invoke(param: Any)
+
+    override fun compareTo(other: Listener): Int {
+        // Listeners with higher priorities should come first, so negate the compare result
+        return -this.priority.compareTo(other.priority)
+    }
 }
 
 /**
@@ -35,7 +41,7 @@ interface Listener {
  * @param priority how highly this listener should be prioritized
  * @param action action which will be called when an event is posted
  */
-class LambdaListener @PublishedApi internal constructor(
+open class LambdaListener @PublishedApi internal constructor(
     override val target: KClass<*>, override val priority: Int, action: (Nothing) -> Unit
 ) : Listener {
     /**
@@ -99,12 +105,11 @@ fun <T : Any> listener(target: Class<T>, priority: Int = -50, action: Consumer<T
  * @param scope [CoroutineScope] to call the lambda in. Will default to [defaultScope]
  * @param action action which will be called when an event is posted
  */
-class AsyncListener @PublishedApi internal constructor(
-    override val target: KClass<*>, override val priority: Int,
-    /**
-     * [CoroutineScope] to call the lambda in. Will default to [defaultScope]
-     */
-    private val scope: CoroutineScope, action: suspend (Nothing) -> Unit
+open class AsyncListener @PublishedApi internal constructor(
+    override val target: KClass<*>,
+    override val priority: Int,
+    private val scope: CoroutineScope,
+    action: suspend (Nothing) -> Unit
 ) : Listener {
     /**
      * Real action that will be called when an event is posted

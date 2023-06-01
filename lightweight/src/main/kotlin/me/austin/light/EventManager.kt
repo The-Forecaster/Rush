@@ -1,6 +1,5 @@
 package me.austin.light
 
-import java.util.*
 import kotlin.reflect.KClass
 
 /**
@@ -32,9 +31,9 @@ class EventManager(private val recursive: Boolean = true) {
         synchronized(this.writeSync) {
             val array = this.registry[T::class]
 
-            if (array === null) {
+            if (array == null) {
                 this.registry[T::class] = arrayOf(action) as Array<out (Any) -> Unit>
-            } else if (!array.contains(action)){
+            } else if (!array.contains(action)) {
                 this.registry[T::class] = when (array.size) {
                     1 -> {
                         arrayOf(array[0], action)
