@@ -25,12 +25,14 @@ val defaultScope = CoroutineScope(Dispatchers.Default)
 
 /**
  * Using [KClass.members] only returns public members, and using [KClass.declaredMembers]
- * doesn't return inherited members. This returns all members, private and inherited.
+ * doesn't return inherited members. This function, while slower than those two, is able
+ * to retrieve all [KCallable] members inside a class.
  *
- * @return All members, private and inherited.
+ * @return A [Sequence] of all members, private and inherited.
  */
 internal val KClass<*>.allMembers: Sequence<KCallable<*>>
     get() {
+        // asSequence just creates a wrapper for better filter and map actions, so it's better to do it this way
         return (this.declaredMembers + this.allSuperclasses.flatMap { it.declaredMembers }).asSequence()
     }
 
@@ -46,18 +48,37 @@ private fun <R> KCallable<R>.handleCall(receiver: Any? = null): R {
     val accessible = this.isAccessible
     this.isAccessible = true
     // Doing this so we don't leak accessibility
-    return try { call(receiver) } catch (e: Throwable) { call() } finally { this.isAccessible = accessible }
+    return try {
+        call(receiver)
+    } catch (e: Throwable) {
+        call()
+    } finally {
+        this.isAccessible = accessible
+    }
 }
+
+private val KClass<*>.listeners: Sequence<KCallable<Listener>>
+    get() {
+        return this.allMembers.filter {
+            it.hasAnnotation<EventHandler>() && it.returnType.withNullability(false)
+                .isSubtypeOf(typeOf<Listener>()) && it.valueParameters.isEmpty()
+        } as Sequence<KCallable<Listener>>
+    }
 
 /**
  * Finds all [Listener] objects inside this object.
  *
  * @return [List] of [Listener] objects inside this object.
  */
-val Any.listeners: List<Listener>
+val Any.listeners: Array<Listener>
     get() {
-        return this::class.allMembers.filter {
-            it.hasAnnotation<EventHandler>() && it.returnType.withNullability(false)
-                .isSubtypeOf(typeOf<Listener>()) && it.valueParameters.isEmpty()
-        }.map { it.handleCall(this) as Listener }.toList()
+        val lists = this::class.listeners
+        val out = arrayOfNulls<Listener>(lists.count())
+
+        // TODO Weird mapping action here, could be improved
+        lists.forEachIndexed { index, callable ->
+            out[index] = callable.handleCall(this)
+        }
+
+        return out as Array<Listener>
     }

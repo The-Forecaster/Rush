@@ -3,6 +3,7 @@ package me.austin.rush
 import java.util.Arrays
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.stream.Stream
 import kotlin.reflect.KClass
 import kotlin.reflect.full.superclasses
 
@@ -130,7 +131,7 @@ open class EventBus(private val recursive: Boolean = false) : IEventBus {
     /**
      * Map that will be used to store registered [Listener] objects and their targets.
      *
-     * The key-set will hold all stored targets of [Listener] objects.
+     * The key-set will hold all stored [KClass] targets of [Listener] objects.
      * The value-set will hold the list of [Listener] objects corresponding to their respective targets.
      */
     private val registry = ConcurrentHashMap<KClass<*>, MutableList<Listener>>()
@@ -138,9 +139,9 @@ open class EventBus(private val recursive: Boolean = false) : IEventBus {
     /**
      * Map that is used to reduce the amount of reflection calls we have to make.
      *
-     * The Key set stores objects and the value set hold the list of [Listener] in that object.
+     * The Key set stores an [Object] and the value set hold an [Array] of [Listener] fields in that object.
      */
-    private val cache = ConcurrentHashMap<Any, List<Listener>>()
+    private val cache = ConcurrentHashMap<Any, Array<Listener>>()
 
     /**
      * This is so we only ever have 1 write action going on at a time
@@ -148,24 +149,14 @@ open class EventBus(private val recursive: Boolean = false) : IEventBus {
     private val writeSync = Any()
 
     override fun register(listener: Listener) {
-        // TODO speed up the registering process
-        val list = this.registry[listener.target]
-
         synchronized(writeSync) {
+            val list = this.registry[listener.target]
+
             if (list == null) {
                 this.registry[listener.target] = CopyOnWriteArrayList(arrayOf(listener))
             } else if (!list.contains(listener)) {
-                var index = 0
-
-                while (index < list.size) {
-                    if (list[index].priority < listener.priority) {
-                        break
-                    }
-
-                    index++
-                }
-
-                list.add(index, listener)
+                // TODO speed up the registering process
+                list.add(Arrays.binarySearch(Array(list.size) { list[it] }, listener), listener)
 
                 this.registry[listener.target] = list
             }
@@ -175,9 +166,7 @@ open class EventBus(private val recursive: Boolean = false) : IEventBus {
     override fun unregister(listener: Listener) {
         // TODO speed up the unregistering process
         synchronized(writeSync) {
-            val list = this.registry[listener.target]
-
-            if (list != null) {
+            this.registry[listener.target]?.let { list ->
                 list.remove(listener)
 
                 this.registry[listener.target] = list
