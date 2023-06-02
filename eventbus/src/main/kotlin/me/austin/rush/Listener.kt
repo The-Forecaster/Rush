@@ -93,7 +93,7 @@ inline fun <reified T : Any> listener(
 @JvmOverloads
 fun <T : Any> listener(
     action: Consumer<T>,
-    target: Class<T> = (action.javaClass.genericSuperclass as ParameterizedType).actualTypeArguments[0] as Class<T>,
+    target: Class<T>,
     priority: Int = -50
 ): LambdaListener {
     return LambdaListener(target.kotlin, priority, action::accept)

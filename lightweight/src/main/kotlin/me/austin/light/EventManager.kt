@@ -14,12 +14,12 @@ class EventManager(private val recursive: Boolean = true) {
     /**
      * For all the classes of events and the lambdas which target them
      */
-    val registry = HashMap<KClass<*>, Array<out (Any) -> Unit>>()
+    private val registry = HashMap<KClass<*>, Array<out (Any) -> Unit>>()
 
     /**
      * This is so we only ever have 1 write action going on at a time
      */
-    val writeSync = Any()
+    private val writeSync = Any()
 
     /**
      * Adds a lambda to the [registry]
@@ -27,6 +27,7 @@ class EventManager(private val recursive: Boolean = true) {
      * @param T the type the lambda accepts
      * @param action the lambda to be added
      */
+    @Suppress("NON_PUBLIC_CALL_FROM_PUBLIC_INLINE")
     inline fun <reified T : Any> register(noinline action: (T) -> Unit) {
         synchronized(this.writeSync) {
             val array = this.registry[T::class]
@@ -65,8 +66,10 @@ class EventManager(private val recursive: Boolean = true) {
      *
      * @param action the object search for and remove listeners of
      */
+    @Suppress("NON_PUBLIC_CALL_FROM_PUBLIC_INLINE")
     inline fun <reified T : Any> unregister(noinline action: (T) -> Unit) {
         synchronized(writeSync) {
+            @Suppress("NON_PUBLIC_CALL_FROM_PUBLIC_INLINE")
             val array = this.registry[T::class]
 
             if (array != null) {

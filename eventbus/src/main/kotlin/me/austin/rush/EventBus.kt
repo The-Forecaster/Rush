@@ -1,9 +1,7 @@
 package me.austin.rush
 
-import java.util.Arrays
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
-import java.util.stream.Stream
 import kotlin.reflect.KClass
 import kotlin.reflect.full.superclasses
 
@@ -149,14 +147,24 @@ open class EventBus(private val recursive: Boolean = false) : IEventBus {
     private val writeSync = Any()
 
     override fun register(listener: Listener) {
+        // TODO speed up the registering process
         synchronized(writeSync) {
             val list = this.registry[listener.target]
 
             if (list == null) {
                 this.registry[listener.target] = CopyOnWriteArrayList(arrayOf(listener))
             } else if (!list.contains(listener)) {
-                // TODO speed up the registering process
-                list.add(Arrays.binarySearch(Array(list.size) { list[it] }, listener), listener)
+                var index = 0
+
+                while (index < list.size) {
+                    if (list[index].priority < listener.priority) {
+                        break
+                    }
+
+                    index++
+                }
+
+                list.add(index, listener)
 
                 this.registry[listener.target] = list
             }
