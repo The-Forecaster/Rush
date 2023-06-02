@@ -39,22 +39,16 @@ internal val KClass<*>.allMembers: Sequence<KCallable<*>>
 /**
  * Unwraps the object referenced in a [KCallable].
  *
- * @param R Type of the [KCallable]
+ * @param R Type parameter of the [KCallable]
  * @param receiver Object containing the [KCallable] if it is non-static.
  *
- * @return The object referenced by the [KCallable].
+ * @return The field referenced by the [KCallable].
  */
 private fun <R> KCallable<R>.handleCall(receiver: Any? = null): R {
     val accessible = this.isAccessible
     this.isAccessible = true
     // Doing this so we don't leak accessibility
-    return try {
-        call(receiver)
-    } catch (e: Throwable) {
-        call()
-    } finally {
-        this.isAccessible = accessible
-    }
+    return try { call(receiver) } catch (e: Throwable) { call() } finally { this.isAccessible = accessible }
 }
 
 private val KClass<*>.listeners: Sequence<KCallable<Listener>>
@@ -68,17 +62,14 @@ private val KClass<*>.listeners: Sequence<KCallable<Listener>>
 /**
  * Finds all [Listener] objects inside this object.
  *
- * @return [List] of [Listener] objects inside this object.
+ * @return [List] of [Listener] fields inside this object.
  */
 val Any.listeners: Array<Listener>
     get() {
-        val lists = this::class.listeners
-        val out = arrayOfNulls<Listener>(lists.count())
-
-        // TODO Weird mapping action here, could be improved
-        lists.forEachIndexed { index, callable ->
-            out[index] = callable.handleCall(this)
+        // TODO this could be improved
+        return this::class.listeners.let { list ->
+            Array(list.count()) { index ->
+                list.elementAt(index).handleCall(this)
+            }
         }
-
-        return out as Array<Listener>
     }

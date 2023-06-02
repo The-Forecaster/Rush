@@ -3,12 +3,12 @@ package me.austin.light
 import kotlin.reflect.KClass
 
 /**
- * Extremely lightweight event-bus made for kotlin use
+ * Extremely lightweight event-bus made for kotlin use.
  *
  * @author Austin
  * @since 2023
  *
- * @param recursive if the bus will also post superclasses of events posted
+ * @param recursive If the bus will also post superclasses of events posted.
  */
 class EventManager(private val recursive: Boolean = true) {
     /**
@@ -69,7 +69,6 @@ class EventManager(private val recursive: Boolean = true) {
     @Suppress("NON_PUBLIC_CALL_FROM_PUBLIC_INLINE")
     inline fun <reified T : Any> unregister(noinline action: (T) -> Unit) {
         synchronized(writeSync) {
-            @Suppress("NON_PUBLIC_CALL_FROM_PUBLIC_INLINE")
             val array = this.registry[T::class]
 
             if (array != null) {
