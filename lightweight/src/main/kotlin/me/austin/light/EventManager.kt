@@ -12,20 +12,20 @@ import kotlin.reflect.KClass
  */
 class EventManager(private val recursive: Boolean = true) {
     /**
-     * For all the classes of events and the lambdas which target them
+     * For all the classes of events and the lambdas which target them.
      */
     private val registry = HashMap<KClass<*>, Array<out (Any) -> Unit>>()
 
     /**
-     * This is so we only ever have 1 write action going on at a time
+     * This is so we only ever have 1 write action going on at a time.
      */
     private val writeSync = Any()
 
     /**
-     * Adds a lambda to the [registry]
+     * Adds a lambda to the [registry].
      *
-     * @param T the type the lambda accepts
-     * @param action the lambda to be added
+     * @param T The type the lambda accepts.
+     * @param action The lambda to be added.
      */
     @Suppress("NON_PUBLIC_CALL_FROM_PUBLIC_INLINE")
     inline fun <reified T : Any> register(noinline action: (T) -> Unit) {
@@ -62,9 +62,9 @@ class EventManager(private val recursive: Boolean = true) {
     }
 
     /**
-     * Removes the specified action from the [registry]
+     * Removes the specified action from the [registry].
      *
-     * @param action the object search for and remove listeners of
+     * @param action The lambda to remove from the registry.
      */
     @Suppress("NON_PUBLIC_CALL_FROM_PUBLIC_INLINE")
     inline fun <reified T : Any> unregister(noinline action: (T) -> Unit) {
@@ -92,26 +92,37 @@ class EventManager(private val recursive: Boolean = true) {
     }
 
     /**
-     * For dispatching events
+     * For dispatching events.
      *
-     * @see <a href="https://github.com/x4e/EventDispatcher/">cookiedragon event bus for my inspiration</a>
+     * @see <a href="https://github.com/x4e/EventDispatcher/">cookiedragon event bus for my inspiration</a>.
      *
-     * @param event event to be posted to all registered actions
+     * @param event Event to be posted to all registered actions.
      */
     fun post(event: Any) {
-        this.registry[event::class]?.let {
+        this.post(event) {
             for (action in it) {
                 action(event)
             }
+        }
+    }
+
+    /**
+     * For invoking lambda's on an [Array] from the [registry]
+     *
+     * @param T Type of the [event].
+     * @param event Event to be requested from the [registry].
+     * @param block Lambda to be called on the [Array] from the from the [registry].
+     */
+    fun <T : Any> post(event: T, block: (Array<out (T) -> Unit>) -> Unit) {
+        this.registry[event::class]?.let {
+            block(it)
         }
 
         if (recursive) {
             var clazz: Class<*>? = event.javaClass.superclass
             while (clazz != null) {
                 this.registry[clazz.kotlin]?.let {
-                    for (action in it) {
-                        action(event)
-                    }
+                    block(it)
                 }
                 clazz = clazz.superclass
             }

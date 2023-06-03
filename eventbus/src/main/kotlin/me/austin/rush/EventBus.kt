@@ -203,7 +203,7 @@ open class EventBus(private val recursive: Boolean = false) : IEventBus {
     }
 
     override fun <T : Any> dispatch(event: T) {
-        this.post(event) {
+        this.dispatch(event) {
             for (listener in it) {
                 listener(event)
             }
@@ -214,12 +214,12 @@ open class EventBus(private val recursive: Boolean = false) : IEventBus {
      * Dispatches an event that is cancellable.
      * When the event is cancelled it will not be posted to any listeners after.
      *
-     * @param T The type of the event posted.
-     * @param event the event which will be posted.
+     * @param T The type of the [event] posted.
+     * @param event The event which will be posted.
      * @return [event].
      */
     open fun <T : Cancellable> dispatch(event: T): T {
-        this.post(event) {
+        this.dispatch(event) {
             for (listener in it) {
                 listener(event)
 
@@ -236,11 +236,14 @@ open class EventBus(private val recursive: Boolean = false) : IEventBus {
      * For removing code duplication.
      *
      * @param T Type that will be posted to.
+     * @param R Type that [block] will return.
      * @param event Event to call from [registry].
      * @param block The code block to call if the list exists.
+     *
+     * @return The result of [block].
      */
-    private fun <T : Any> post(event: T, block: (MutableList<Listener>) -> Unit) {
-        this.registry[event::class]?.let {
+    private fun <T : Any, R> dispatch(event: T, block: (MutableList<Listener>) -> R): R? {
+        val out: R? = this.registry[event::class]?.let {
             block(it)
         }
 
@@ -251,5 +254,7 @@ open class EventBus(private val recursive: Boolean = false) : IEventBus {
                 }
             }
         }
+
+        return out
     }
 }

@@ -1,10 +1,7 @@
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import me.austin.light.EventManager
-import me.austin.rush.EventBus
-import me.austin.rush.EventHandler
-import me.austin.rush.asyncListener
-import me.austin.rush.listener
+import me.austin.rush.*
 import org.junit.jupiter.api.Test
 
 class KotlinTest {
@@ -63,6 +60,20 @@ class KotlinTest {
             unregister(act)
 
             post("I just posted another event")
+
+            val event = CancellableEvent()
+
+            post(event) {
+                for (action in it) {
+                    action(event)
+
+                    if (event.isCancelled) {
+                        break
+                    }
+                }
+            }
         }
     }
 }
+
+class CancellableEvent : Cancellable()
