@@ -3,6 +3,7 @@ package me.austin.rush
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.reflect.KClass
+import kotlin.reflect.full.allSuperclasses
 import kotlin.reflect.full.superclasses
 
 /**
@@ -248,7 +249,7 @@ open class EventBus(private val recursive: Boolean = false) : IEventBus {
         }
 
         if (this.recursive) {
-            for (clazz in event::class.superclasses) {
+            for (clazz in event::class.allSuperclasses) {
                 this.registry[clazz]?.let {
                     block(it)
                 }
