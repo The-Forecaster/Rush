@@ -51,6 +51,11 @@ private fun <R> KCallable<R>.handleCall(receiver: Any? = null): R {
     return try { call(receiver) } catch (e: Throwable) { call() } finally { this.isAccessible = accessible }
 }
 
+/**
+ * Returns all [KCallable] fields in this class that reference [Listener] fields.
+ *
+ * @return A [Sequence] of [KCallable] objects that reference [Listener] fields.
+ */
 private val KClass<*>.listeners: Sequence<KCallable<Listener>>
     get() {
         return this.allMembers.filter {
@@ -62,11 +67,11 @@ private val KClass<*>.listeners: Sequence<KCallable<Listener>>
 /**
  * Finds all [Listener] objects inside this object.
  *
- * @return [List] of [Listener] fields inside this object.
+ * @return A [List] of [Listener] fields inside this object.
  */
 val Any.listeners: Array<Listener>
     get() {
-        // TODO this could be improved
+        // TODO this is slow, should be improved
         return this::class.listeners.let { list ->
             Array(list.count()) { index ->
                 list.elementAt(index).handleCall(this)

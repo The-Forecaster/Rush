@@ -35,9 +35,9 @@ interface Listener : Comparable<Listener> {
 /**
  * Implementation of [Listener] that uses a lambda function as its target.
  *
- * @constructor Creates a listener with the specified parameters.
+ * @constructor Creates a [Listener] with the specified parameters.
  *
- * @param target [KClass] which the listener will accept.
+ * @param target [KClass] which [action] will accept.
  * @param priority How highly this listener should be prioritized.
  * @param action Lambda which will be called when an event is posted.
  */
@@ -70,7 +70,7 @@ inline fun <reified T : Any> listener(noinline action: (T) -> Unit): LambdaListe
 /**
  * This is for making listeners in Kotlin.
  *
- * @param T Type the lambda will accept.
+ * @param T Type that [action] will accept.
  * @param action Lambda the listeners will call when an event is posted.
  * @param priority The priority which this listener will be called when an event is posted.
  * @param target [KClass] that the listener will listen for.
@@ -78,7 +78,7 @@ inline fun <reified T : Any> listener(noinline action: (T) -> Unit): LambdaListe
  * @return [LambdaListener] with the action.
  */
 inline fun <reified T : Any> listener(
-    noinline action: (T) -> Unit, priority: Int = -50, target: KClass<T> = T::class
+    noinline action: (T) -> Unit, priority: Int = -50, target: KClass<*> = T::class
 ): LambdaListener {
     return LambdaListener(target, priority, action)
 }
@@ -87,7 +87,7 @@ inline fun <reified T : Any> listener(
  * Constructor for java.
  *
  * @param action [Consumer] which will be called when an event is posted.
- * @param target [Class] which the listener will accept.
+ * @param target [Class] which [action] will accept.
  * @param priority How highly this listener should be prioritized.
  */
 @JvmOverloads

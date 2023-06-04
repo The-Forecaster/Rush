@@ -196,6 +196,7 @@ open class EventBus(private val recursive: Boolean = false) : IEventBus {
     }
 
     override fun unregister(subscriber: Any) {
+        // If subscriber isn't in the cache then it hasn't been registered, so we don't need to unregister it
         this.cache[subscriber]?.let {
             for (listener in it) {
                 this.unregister(listener)
@@ -244,15 +245,11 @@ open class EventBus(private val recursive: Boolean = false) : IEventBus {
      * @return The result of [block].
      */
     private fun <T : Any, R> dispatch(event: T, block: (MutableList<Listener>) -> R): R? {
-        val out: R? = this.registry[event::class]?.let {
-            block(it)
-        }
+        val out = this.registry[event::class]?.let(block)
 
         if (this.recursive) {
             for (clazz in event::class.allSuperclasses) {
-                this.registry[clazz]?.let {
-                    block(it)
-                }
+                this.registry[clazz]?.let(block)
             }
         }
 

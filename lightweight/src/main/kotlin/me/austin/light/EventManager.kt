@@ -114,16 +114,12 @@ class EventManager(private val recursive: Boolean = true) {
      * @param block Lambda to be called on the [Array] from the from the [registry].
      */
     fun <T : Any> post(event: T, block: (Array<out (T) -> Unit>) -> Unit) {
-        this.registry[event::class]?.let {
-            block(it)
-        }
+        this.registry[event::class]?.let(block)
 
         if (recursive) {
             var clazz: Class<*>? = event.javaClass.superclass
             while (clazz != null) {
-                this.registry[clazz.kotlin]?.let {
-                    block(it)
-                }
+                this.registry[clazz.kotlin]?.let(block)
                 clazz = clazz.superclass
             }
         }
