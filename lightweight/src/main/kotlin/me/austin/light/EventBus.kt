@@ -10,7 +10,7 @@ import kotlin.reflect.KClass
  *
  * @param recursive If the bus will also post superclasses of events posted.
  */
-class EventManager(private val recursive: Boolean = true) {
+class EventBus(private val recursive: Boolean = true) {
     /**
      * For all the classes of events and the lambdas which target them.
      */
@@ -27,7 +27,7 @@ class EventManager(private val recursive: Boolean = true) {
      * @param T The type the lambda accepts.
      * @param action The lambda to be added.
      */
-    @Suppress("NON_PUBLIC_CALL_FROM_PUBLIC_INLINE")
+    @Suppress("NON_PUBLIC_CALL_FROM_PUBLIC_INLINE", "UNCHECKED_CAST")
     inline fun <reified T : Any> register(noinline action: (T) -> Unit) {
         synchronized(this.writeSync) {
             val array = this.registry[T::class]
@@ -66,7 +66,7 @@ class EventManager(private val recursive: Boolean = true) {
      *
      * @param action The lambda to remove from the registry.
      */
-    @Suppress("NON_PUBLIC_CALL_FROM_PUBLIC_INLINE")
+    @Suppress("NON_PUBLIC_CALL_FROM_PUBLIC_INLINE", "UNCHECKED_CAST")
     inline fun <reified T : Any> unregister(noinline action: (T) -> Unit) {
         synchronized(writeSync) {
             val array = this.registry[T::class]
@@ -111,7 +111,7 @@ class EventManager(private val recursive: Boolean = true) {
      *
      * @param T Type of the [event].
      * @param event Event to be requested from the [registry].
-     * @param block Lambda to be called on the [Array] from the from the [registry].
+     * @param block Lambda to be called on an [Array] from the [registry].
      */
     fun <T : Any> post(event: T, block: (Array<out (T) -> Unit>) -> Unit) {
         this.registry[event::class]?.let(block)

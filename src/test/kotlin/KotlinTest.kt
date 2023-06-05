@@ -1,13 +1,13 @@
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import me.austin.light.EventManager
+import me.austin.light.EventBus
 import me.austin.rush.*
 import org.junit.jupiter.api.Test
 
 class KotlinTest {
     @EventHandler
     val async = asyncListener<String> {
-        delay(1000)
+        delay(100)
         println("$it that's delayed for longer!!")
     }
 
@@ -23,14 +23,22 @@ class KotlinTest {
 
         val listener = listener<String> { println("$it!") }
 
-        with(EventBus()) {
+        with(EventDispatcher()) {
             registerAll(listener, async)
-            register(KotlinTest())
-            dispatch("I just posted an event")
-        }
 
-        runBlocking {
-            delay(1100)
+            dispatch("I just posted an event")
+
+            runBlocking {
+                delay(1100)
+            }
+
+            unregisterAll(listener, async)
+
+            dispatch("I just posted another event")
+
+            runBlocking {
+                delay(1100)
+            }
         }
     }
 
@@ -40,7 +48,7 @@ class KotlinTest {
             println("$it!!!!!!!")
         }
 
-        with(EventManager(false)) {
+        with(EventBus(false)) {
             register<String> {
                 println("$it!")
             }

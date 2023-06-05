@@ -14,6 +14,7 @@ import kotlin.reflect.typeOf
  * @author Austin
  * @since 2022
  */
+@Target(AnnotationTarget.FIELD)
 annotation class EventHandler
 
 /**
@@ -65,16 +66,16 @@ private val KClass<*>.listeners: Sequence<KCallable<Listener>>
     }
 
 /**
- * Finds all [Listener] objects inside this object.
+ * Finds all [Listener] fields inside this object's class.
  *
- * @return A [List] of [Listener] fields inside this object.
+ * @return An [Array] of [Listener] fields inside this object.
  */
 val Any.listeners: Array<Listener>
     get() {
-        // TODO this is slow, should be improved
-        return this::class.listeners.let { list ->
-            Array(list.count()) { index ->
-                list.elementAt(index).handleCall(this)
-            }
+        // TODO slow mapping action, should be improved
+        val list = this::class.listeners
+
+        return Array(list.count()) {
+            list.elementAt(it).handleCall(this)
         }
     }

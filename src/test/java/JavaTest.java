@@ -1,7 +1,9 @@
-import me.austin.rush.*;
+import me.austin.rush.EventDispatcher;
+import me.austin.rush.EventHandler;
+import me.austin.rush.LambdaListener;
 import org.junit.jupiter.api.Test;
 
-import static me.austin.rush.ListenerKt.listener;
+import static me.austin.rush.ListenerImplKt.listener;
 
 final class JavaTest {
     @EventHandler
@@ -9,7 +11,7 @@ final class JavaTest {
 
     @Test
     public void test() {
-        final EventBus BUS = new EventBus();
+        final EventDispatcher BUS = new EventDispatcher();
         final LambdaListener LIST = listener(event -> System.out.println(event + "!"), String.class);
 
         BUS.register(LIST);
