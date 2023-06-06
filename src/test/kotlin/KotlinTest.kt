@@ -12,14 +12,14 @@ class KotlinTest {
     }
 
     @EventHandler
-    val listener = listener<String>({ println("$it with higher priority!") }, 1000)
+    val listener = listener<String>({ println("$it with higher priority!") }, 60)
 
     @Test
     fun test() {
         val async = asyncListener<String>({
             delay(10)
             println("$it that's delayed!")
-        }, 200)
+        }, 40)
 
         val listener = listener<String> { println("$it!") }
 

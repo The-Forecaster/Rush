@@ -45,7 +45,7 @@ internal val KClass<*>.allMembers: Sequence<KCallable<*>>
  *
  * @return The field referenced by the [KCallable].
  */
-private fun <R> KCallable<R>.handleCall(receiver: Any? = null): R {
+private fun <R> KCallable<R>.handleCall(receiver: Any?): R {
     val accessible = this.isAccessible
     this.isAccessible = true
     // Doing this so we don't leak accessibility
@@ -70,12 +70,7 @@ private val KClass<*>.listeners: Sequence<KCallable<Listener>>
  *
  * @return An [Array] of [Listener] fields inside this object.
  */
-val Any.listeners: Array<Listener>
+val Any.listeners: List<Listener>
     get() {
-        // TODO slow mapping action, should be improved
-        val list = this::class.listeners
-
-        return Array(list.count()) {
-            list.elementAt(it).handleCall(this)
-        }
+        return this::class.listeners.map { it.handleCall(this) }.toList()
     }

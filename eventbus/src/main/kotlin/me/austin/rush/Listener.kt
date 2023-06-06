@@ -1,9 +1,5 @@
 package me.austin.rush
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
-import java.lang.reflect.ParameterizedType
-import java.util.function.Consumer
 import kotlin.reflect.KClass
 
 /**
@@ -13,16 +9,16 @@ import kotlin.reflect.KClass
  * @since 2022
  */
 interface Listener : Comparable<Listener> {
-    /** The class of the target event */
+    /** The [KClass] of the target event */
     val target: KClass<*>
 
     /** The priority that the listener will be called upon */
-    val priority: Int
+    val priority: Byte
 
     /**
      * Processes an event passed through this listener.
      *
-     * @param param Event object that is being processed.
+     * @param param The Event object that is being processed.
      */
     operator fun invoke(param: Any)
 

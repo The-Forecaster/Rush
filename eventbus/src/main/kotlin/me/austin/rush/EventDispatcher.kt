@@ -27,7 +27,7 @@ open class EventDispatcher(private val recursive: Boolean = false) : EventBus {
      *
      * The Key set stores an [Object] and the value set hold an [Array] of [Listener] fields in that object.
      */
-    private val cache = ConcurrentHashMap<Any, Array<Listener>>()
+    private val cache = ConcurrentHashMap<Any, List<Listener>>()
 
     /**
      * This is so we only ever have 1 write action going on at a time
@@ -62,6 +62,14 @@ open class EventDispatcher(private val recursive: Boolean = false) : EventBus {
     override fun unregister(listener: Listener) {
         // TODO speed up the unregistering process
         synchronized(writeSync) {
+            val list = this.registry[listener.target]
+
+            if (list != null) {
+                val out = Array<Listener?>(list.size) { null }
+
+
+            }
+
             this.registry[listener.target]?.let {
                 it.remove(listener)
 

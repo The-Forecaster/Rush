@@ -110,18 +110,22 @@ class EventBus(private val recursive: Boolean = true) {
      * For invoking lambda's on an [Array] from the [registry]
      *
      * @param T Type of the [event].
+     * @param R The return type of [block]
      * @param event Event to be requested from the [registry].
      * @param block Lambda to be called on an [Array] from the [registry].
      */
-    fun <T : Any> post(event: T, block: (Array<out (T) -> Unit>) -> Unit) {
-        this.registry[event::class]?.let(block)
+    fun <T : Any, R> post(event: T, block: (Array<out (T) -> Unit>) -> R): R? {
+        val out = this.registry[event::class]?.let(block)
 
         if (recursive) {
             var clazz: Class<*>? = event.javaClass.superclass
+
             while (clazz != null) {
                 this.registry[clazz.kotlin]?.let(block)
                 clazz = clazz.superclass
             }
         }
+
+        return out
     }
 }

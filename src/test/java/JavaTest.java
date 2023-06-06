@@ -7,7 +7,7 @@ import static me.austin.rush.ListenerImplKt.listener;
 
 final class JavaTest {
     @EventHandler
-    private final LambdaListener LISTENER = listener(event -> System.out.println(event + " with higher priority!"), String.class, 1000);
+    private final LambdaListener LISTENER = listener(event -> System.out.println(event + " with higher priority!"), String.class, (byte) 8);
 
     @Test
     public void test() {
