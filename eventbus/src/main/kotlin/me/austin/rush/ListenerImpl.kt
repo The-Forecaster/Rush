@@ -36,7 +36,7 @@ open class LambdaListener @PublishedApi internal constructor(
  *
  * @return A new [LambdaListener] with the specified parameters.
  */
-inline fun <reified T : Any> listener(noinline action: (T) -> Unit): LambdaListener {
+inline fun <reified T> listener(noinline action: (T) -> Unit): LambdaListener {
     return LambdaListener(T::class, -8, action)
 }
 
@@ -50,7 +50,7 @@ inline fun <reified T : Any> listener(noinline action: (T) -> Unit): LambdaListe
  *
  * @return A new [LambdaListener] with the specified parameters.
  */
-inline fun <reified T : Any> listener(
+inline fun <reified T> listener(
     noinline action: (T) -> Unit, priority: Byte = -8, target: KClass<*> = T::class
 ): LambdaListener {
     return LambdaListener(target, priority, action)
@@ -75,7 +75,7 @@ fun <T : Any> listener(
 /**
  * Implementation of [Listener] that uses an asynchronous lambda function as its target.
  *
- * @constructor Creates a listener with the specified parameters.
+ * @constructor Creates an [AsyncListener] with the specified parameters.
  *
  * @param target The [KClass] which the [action] will accept.
  * @param priority How highly this [Listener] should be prioritized.
@@ -107,7 +107,7 @@ open class AsyncListener @PublishedApi internal constructor(
  *
  * @return A new [AsyncListener] with the action.
  */
-inline fun <reified T : Any> asyncListener(noinline action: suspend (T) -> Unit): AsyncListener {
+inline fun <reified T> asyncListener(noinline action: suspend (T) -> Unit): AsyncListener {
     return AsyncListener(T::class, -8, defaultScope, action)
 }
 
@@ -122,10 +122,10 @@ inline fun <reified T : Any> asyncListener(noinline action: suspend (T) -> Unit)
  *
  * @return A new [AsyncListener] with the action.
  */
-inline fun <reified T : Any> asyncListener(
+inline fun <reified T> asyncListener(
     noinline action: suspend (T) -> Unit,
     priority: Byte = -8,
-    target: KClass<T> = T::class,
+    target: KClass<*> = T::class,
     scope: CoroutineScope = defaultScope
 ): AsyncListener {
     return AsyncListener(target, priority, scope, action)

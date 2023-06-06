@@ -29,7 +29,7 @@ class KotlinTest {
             dispatch("I just posted an event")
 
             runBlocking {
-                delay(1100)
+                delay(200)
             }
 
             unregisterAll(listener, async)
@@ -37,7 +37,7 @@ class KotlinTest {
             dispatch("I just posted another event")
 
             runBlocking {
-                delay(1100)
+                delay(200)
             }
         }
     }

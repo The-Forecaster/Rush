@@ -65,18 +65,18 @@ open class EventDispatcher(private val recursive: Boolean = false) : EventBus {
             val list = this.registry[listener.target]
 
             if (list != null) {
-                val out = Array<Listener?>(list.size) { null }
+                if (list.contains(listener)) {
+                    val out = Array<Listener?>(list.size - 1) { null }
+                    var index = 0
 
+                    for (element in list) {
+                        if (element != listener) {
+                            out[index] = element
+                            index ++
+                        }
+                    }
 
-            }
-
-            this.registry[listener.target]?.let {
-                it.remove(listener)
-
-                this.registry[listener.target] = it
-
-                if (it.size == 0) {
-                    this.registry.remove(listener.target)
+                    this.registry[listener.target] = CopyOnWriteArrayList(out)
                 }
             }
         }
