@@ -8,23 +8,25 @@ class KotlinTest {
     @EventHandler
     val async = asyncListener<String> {
         delay(100)
-        println("$it that's delayed for longer!!")
+        println("$it that's delayed for longer!")
     }
 
     @EventHandler
-    val listener = listener<String>({ println("$it with higher priority!") }, 60)
+    val listener = listener<String>(priority = 60) { println("$it with higher priority!") }
 
     @Test
     fun test() {
-        val async = asyncListener<String>({
+        val async = asyncListener<String>(priority = 40) {
             delay(10)
             println("$it that's delayed!")
-        }, 40)
+        }
 
-        val listener = listener<String> { println("$it!") }
+        val list = listener<String> { println("$it!") }
 
         with(EventDispatcher()) {
-            registerAll(listener, async)
+            registerAll(list, async)
+
+            register(KotlinTest())
 
             dispatch("I just posted an event")
 
@@ -32,7 +34,7 @@ class KotlinTest {
                 delay(200)
             }
 
-            unregisterAll(listener, async)
+            unregisterAll(list, async)
 
             dispatch("I just posted another event")
 
@@ -53,14 +55,6 @@ class KotlinTest {
                 println("$it!")
             }
 
-            register<String> {
-                println("$it!!")
-            }
-
-            register<String> {
-                println("$it!!!")
-            }
-
             register(act)
 
             post("I just posted an event")
@@ -68,20 +62,6 @@ class KotlinTest {
             unregister(act)
 
             post("I just posted another event")
-
-            val event = CancellableEvent()
-
-            post(event) {
-                for (action in it) {
-                    action(event)
-
-                    if (event.isCancelled) {
-                        break
-                    }
-                }
-            }
         }
     }
 }
-
-class CancellableEvent : Cancellable()

@@ -1,10 +1,5 @@
 package me.austin.rush
 
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.CopyOnWriteArrayList
-import kotlin.reflect.KClass
-import kotlin.reflect.full.allSuperclasses
-
 /**
  * Basic structure for an event dispatcher.
  *
@@ -31,7 +26,7 @@ interface EventBus {
     }
 
     /**
-     * Adds all [Listener] objects in an iterable to the registry.
+     * Adds all [Listener] objects in an [Iterable] to the registry.
      *
      * @param listeners The [Iterable] of [Listener] objects you want to be added.
      */
@@ -61,7 +56,7 @@ interface EventBus {
     }
 
     /**
-     * Removes all [Listener] objects in an iterable from the registry.
+     * Removes all [Listener] objects in an [Iterable] from the registry.
      *
      * @param listeners [Iterable] of [Listener] objects you want to be removed.
      * @see unregister

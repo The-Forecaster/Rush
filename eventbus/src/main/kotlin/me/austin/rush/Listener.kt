@@ -13,7 +13,7 @@ interface Listener {
     val target: KClass<*>
 
     /** The priority that the listener will be called upon */
-    val priority: Byte
+    val priority: Int
 
     /**
      * Processes an event passed through this listener.

@@ -20,14 +20,14 @@ open class EventDispatcher(private val recursive: Boolean = false) : EventBus {
      * The key-set will hold all stored [KClass] targets of [Listener] objects.
      * The value-set will hold the list of [Listener] objects corresponding to their respective targets.
      */
-    private val registry = ConcurrentHashMap<KClass<*>, MutableList<Listener>>()
+    private val registry = ConcurrentHashMap<KClass<*>, CopyOnWriteArrayList<Listener>>()
 
     /**
      * Map that is used to reduce the amount of reflection calls we have to make.
      *
      * The Key set stores an [Object] and the value set hold an [Array] of [Listener] fields in that object.
      */
-    private val cache = ConcurrentHashMap<Any, List<Listener>>()
+    private val cache = ConcurrentHashMap<Any, Array<Listener>>()
 
     /**
      * This is so we only ever have 1 write action going on at a time
@@ -53,8 +53,6 @@ open class EventDispatcher(private val recursive: Boolean = false) : EventBus {
                 }
 
                 list.add(index, listener)
-
-                this.registry[listener.target] = list
             }
         }
     }
@@ -65,14 +63,16 @@ open class EventDispatcher(private val recursive: Boolean = false) : EventBus {
             val list = this.registry[listener.target]
 
             if (list != null) {
-                if (list.contains(listener)) {
+                if (list.size == 1) {
+                    this.registry.remove(listener.target)
+                } else {
                     val out = Array<Listener?>(list.size - 1) { null }
                     var index = 0
 
                     for (element in list) {
                         if (element != listener) {
                             out[index] = element
-                            index ++
+                            index++
                         }
                     }
 
@@ -80,13 +80,18 @@ open class EventDispatcher(private val recursive: Boolean = false) : EventBus {
                 }
             }
         }
-
     }
 
     override fun register(subscriber: Any) {
         // TODO subscriber.listeners could probably be inlined somewhat
-        for (listener in this.cache.getOrPut(subscriber) { subscriber.listeners }) {
-            this.register(listener)
+        for (listener in this.cache.getOrPut(subscriber) {
+            subscriber.listeners.let { list ->
+                Array(list.size) { index ->
+                    list[index]
+                }
+            }
+        }) {
+            this.unregister(listener)
         }
     }
 

@@ -9,12 +9,13 @@ import kotlin.reflect.jvm.isAccessible
 import kotlin.reflect.typeOf
 
 /**
- * Annotate a listener with this class to mark it for adding to the eventbus registry.
+ * Annotate a [Listener] with this class to mark it for adding to the [EventBus].
  *
  * @author Austin
  * @since 2022
  */
 @Target(AnnotationTarget.FIELD)
+@Retention(AnnotationRetention.RUNTIME)
 annotation class EventHandler
 
 /**
@@ -43,9 +44,9 @@ internal val KClass<*>.allMembers: Sequence<KCallable<*>>
  * @param R Type parameter of the [KCallable]
  * @param receiver Object containing the [KCallable] if it is non-static.
  *
- * @return The field referenced by the [KCallable].
+ * @return The [R] referenced by the [KCallable].
  */
-private fun <R> KCallable<R>.handleCall(receiver: Any?): R {
+internal fun <R> KCallable<R>.handleCall(receiver: Any): R {
     val accessible = this.isAccessible
     this.isAccessible = true
     // Doing this so we don't leak accessibility
@@ -70,7 +71,15 @@ private val KClass<*>.listeners: Sequence<KCallable<Listener>>
  *
  * @return An [Array] of [Listener] fields inside this object.
  */
-val Any.listeners: List<Listener>
+val Any.listeners: Array<Listener>
     get() {
-        return this::class.listeners.map { it.handleCall(this) }.toList()
+        return this::class.listeners.let { sequence ->
+            val array = arrayOfNulls<Listener>(sequence.count())
+
+            sequence.forEachIndexed { index, listener ->
+                array[index] = listener.handleCall(this)
+            }
+
+            array as Array<Listener>
+        }
     }

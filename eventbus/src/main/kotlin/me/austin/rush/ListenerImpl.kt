@@ -15,7 +15,7 @@ import kotlin.reflect.KClass
  * @param action The lambda which will be called when an event is posted.
  */
 open class LambdaListener @PublishedApi internal constructor(
-    override val target: KClass<*>, override val priority: Byte, action: (Nothing) -> Unit
+    override val target: KClass<*>, override val priority: Int, action: (Nothing) -> Unit
 ) : Listener {
     /**
      * Real action that will be called when an event is posted.
@@ -36,22 +36,22 @@ open class LambdaListener @PublishedApi internal constructor(
  *
  * @return A new [LambdaListener] with the specified parameters.
  */
-inline fun <reified T> listener(noinline action: (T) -> Unit): LambdaListener {
-    return LambdaListener(T::class, -8, action)
+inline fun <reified T> listener(noinline action: (T) -> Unit): Listener {
+    return LambdaListener(T::class, -50, action)
 }
 
 /**
  * This is for making listeners in Kotlin.
  *
  * @param T The type that [action] will accept.
+ * @param target The [KClass] that this listener will listen for. Will default to [T].
+ * @param priority How highly this listener should be prioritized when an event is posted. Will default to `-50`.
  * @param action The lambda the listeners will call when an event is posted.
- * @param priority How highly this listener should be prioritized when an event is posted. Will default to -8
- * @param target The [KClass] that this listener will listen for. Will default to [T]
  *
  * @return A new [LambdaListener] with the specified parameters.
  */
-inline fun <reified T> listener(
-    noinline action: (T) -> Unit, priority: Byte = -8, target: KClass<*> = T::class
+inline fun <reified T : Any> listener(
+    target: KClass<*> = T::class, priority: Int = -50, noinline action: (T) -> Unit
 ): LambdaListener {
     return LambdaListener(target, priority, action)
 }
@@ -61,13 +61,13 @@ inline fun <reified T> listener(
  *
  * @param action The [Consumer] which will be called when an event is posted.
  * @param target The [Class] which [action] will accept.
- * @param priority How highly this listener should be prioritized will default to -8.
+ * @param priority How highly this listener should be prioritized will default to `-50`.
  *
  * @return A new [LambdaListener] with the [Consumer] as its action.
  */
 @JvmOverloads
 fun <T : Any> listener(
-    action: Consumer<T>, target: Class<T>, priority: Byte = -8
+    target: Class<T>, priority: Int = -50, action: Consumer<T>
 ): LambdaListener {
     return LambdaListener(target.kotlin, priority, action::accept)
 }
@@ -84,7 +84,7 @@ fun <T : Any> listener(
  */
 open class AsyncListener @PublishedApi internal constructor(
     override val target: KClass<*>,
-    override val priority: Byte,
+    override val priority: Int,
     private val scope: CoroutineScope,
     action: suspend (Nothing) -> Unit
 ) : Listener {
@@ -108,25 +108,25 @@ open class AsyncListener @PublishedApi internal constructor(
  * @return A new [AsyncListener] with the action.
  */
 inline fun <reified T> asyncListener(noinline action: suspend (T) -> Unit): AsyncListener {
-    return AsyncListener(T::class, -8, defaultScope, action)
+    return AsyncListener(T::class, -50, defaultScope, action)
 }
 
 /**
  * This is for making listeners that can use async/await functions.
  *
  * @param T The type that [action] will accept.
- * @param action The lambda that will call when an event is posted.
- * @param priority The priority which this listener will be called when an event is posted. Will default to -8.
  * @param target The [KClass] that the listener will listen for. Will default to [T].
+ * @param priority The priority which this listener will be called when an event is posted. Will default to `-50`.
  * @param scope [CoroutineScope] to call the lambda in. Will default to [defaultScope].
+ * @param action The lambda that will call when an event is posted.
  *
  * @return A new [AsyncListener] with the action.
  */
-inline fun <reified T> asyncListener(
-    noinline action: suspend (T) -> Unit,
-    priority: Byte = -8,
+inline fun <reified T : Any> asyncListener(
     target: KClass<*> = T::class,
-    scope: CoroutineScope = defaultScope
+    priority: Int = -50,
+    scope: CoroutineScope = defaultScope,
+    noinline action: suspend (T) -> Unit
 ): AsyncListener {
     return AsyncListener(target, priority, scope, action)
 }
