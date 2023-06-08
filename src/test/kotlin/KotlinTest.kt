@@ -46,8 +46,8 @@ class KotlinTest {
 
     @Test
     fun test_lightweight() {
-        val act: (String) -> Unit = {
-            println("$it!!!!!!!")
+        val handler = EventBus.Handler<String>(-50) {
+            println("$it!!")
         }
 
         with(EventBus(false)) {
@@ -55,11 +55,11 @@ class KotlinTest {
                 println("$it!")
             }
 
-            register(act)
+            register(handler)
 
             post("I just posted an event")
 
-            unregister(act)
+            unregister(handler)
 
             post("I just posted another event")
         }

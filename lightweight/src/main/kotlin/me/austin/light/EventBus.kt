@@ -15,7 +15,7 @@ class EventBus(private val recursive: Boolean = true) {
     /**
      * For all the classes of events and the lambdas which target them.
      */
-    private val registry = HashMap<KClass<*>, Array<Handler>>()
+    private val registry = HashMap<KClass<*>, Array<Handler<*>>>()
 
     /**
      * This is so we only ever have 1 write action going on at a time.
@@ -29,11 +29,11 @@ class EventBus(private val recursive: Boolean = true) {
      * @param handler The handler to be added to the registry.
      */
     @Suppress("NON_PUBLIC_CALL_FROM_PUBLIC_INLINE", "UNCHECKED_CAST")
-    inline fun <reified T : Any> register(handler: Handler) {
+    inline fun <reified T> register(handler: Handler<T>) {
         synchronized(this.writeSync) {
             val array = this.registry[T::class]
 
-            this.registry[T::class] = if (array == null) {
+            this.registry[T::class] = (if (array == null) {
                 arrayOf(handler)
             } else if (array.contains(handler)) {
                 array
@@ -52,7 +52,7 @@ class EventBus(private val recursive: Boolean = true) {
                     }
 
                     else -> {
-                        val out = Array<Handler?>(array.size + 1) { null }
+                        val out = Array<Handler<T>?>(array.size + 1) { null }
 
                         val index = Arrays.binarySearch(array, handler).let {
                             if (it < 0) {
@@ -69,7 +69,7 @@ class EventBus(private val recursive: Boolean = true) {
                         out
                     }
                 }
-            } as Array<Handler>
+            }) as Array<Handler<*>>
         }
     }
 
@@ -83,23 +83,23 @@ class EventBus(private val recursive: Boolean = true) {
      * @param handler The handler to remove from the registry.
      */
     @Suppress("NON_PUBLIC_CALL_FROM_PUBLIC_INLINE", "UNCHECKED_CAST")
-    inline fun <reified T : Any> unregister(handler: Handler) {
+    inline fun <reified T : Any> unregister(handler: Handler<T>) {
         synchronized(writeSync) {
             val array = this.registry[T::class]
 
             if (array != null) {
                 if (array.size > 1) {
-                    val out = Array<Handler?>(array.size - 1) { null }
+                    val out = Array<Handler<T>?>(array.size - 1) { null }
                     var index = 0
 
-                    for (element in array) {
+                    for (element in (array as Array<Handler<T>>)) {
                         if (handler != element) {
                             out[index] = element
                             index++
                         }
                     }
 
-                    this.registry[T::class] = out as Array<Handler>
+                    this.registry[T::class] = out as Array<Handler<*>>
                 } else {
                     this.registry.remove(T::class)
                 }
@@ -114,10 +114,10 @@ class EventBus(private val recursive: Boolean = true) {
      *
      * @param event Event to be posted to all registered actions.
      */
-    fun post(event: Any) {
+    fun <T : Any> post(event: T) {
         this.registry[event::class]?.let {
             for (handler in it) {
-                handler.invoker(event)
+                handler.invoke(event)
             }
         }
 
@@ -127,7 +127,7 @@ class EventBus(private val recursive: Boolean = true) {
             while (clazz != null) {
                 this.registry[clazz.kotlin]?.let {
                     for (handler in it) {
-                        handler.invoker(event)
+                        handler.invoke(event)
                     }
                 }
                 clazz = clazz.superclass
@@ -135,10 +135,12 @@ class EventBus(private val recursive: Boolean = true) {
         }
     }
 
-    class Handler(private val priority: Int, handle: (Nothing) -> Unit) : Comparable<Handler> {
-        internal val invoker = handle as (Any) -> Unit
+    class Handler<T>(private val priority: Int = -50, val handle: (T) -> Unit) : Comparable<Handler<*>> {
+        fun invoke(param: Any) {
+            this.handle(param as T)
+        }
 
-        override fun compareTo(other: Handler): Int {
+        override fun compareTo(other: Handler<*>): Int {
             return -this.priority.compareTo(other.priority)
         }
     }
