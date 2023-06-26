@@ -14,8 +14,6 @@ import kotlin.reflect.typeOf
  * @author Austin
  * @since 2022
  */
-@Target(AnnotationTarget.FIELD)
-@Retention(AnnotationRetention.RUNTIME)
 annotation class EventHandler
 
 /**
@@ -30,12 +28,12 @@ val defaultScope = CoroutineScope(Dispatchers.Default)
  * doesn't return inherited members. This function, while slower than those two, is able
  * to retrieve all [KCallable] members inside a class.
  *
- * @return A [Sequence] of all members, private and inherited.
+ * @return A [List] of all members, private and inherited.
  */
-internal val KClass<*>.allMembers: Sequence<KCallable<*>>
+private val KClass<*>.allMembers: Sequence<KCallable<*>>
     get() {
         // asSequence just creates a wrapper for better filter and map actions, so it's better to do it this way
-        return (this.declaredMembers + this.allSuperclasses.flatMap { it.declaredMembers }).asSequence()
+        return (this.declaredMembers + this.allSuperclasses.flatMap { kClass -> kClass.declaredMembers }).asSequence()
     }
 
 /**
@@ -46,23 +44,22 @@ internal val KClass<*>.allMembers: Sequence<KCallable<*>>
  *
  * @return The [R] referenced by the [KCallable].
  */
-internal fun <R> KCallable<R>.handleCall(receiver: Any): R {
+private fun <R> KCallable<R>.handleCall(receiver: Any): R {
     val accessible = this.isAccessible
     this.isAccessible = true
     // Doing this so we don't leak accessibility
-    return try { call(receiver) } catch (e: Throwable) { call() } finally { this.isAccessible = accessible }
+    return try { this.call(receiver) } catch (e: Throwable) { this.call() } finally { this.isAccessible = accessible }
 }
 
 /**
  * Returns all [KCallable] fields in this class that reference [Listener] fields.
  *
- * @return A [Sequence] of [KCallable] objects that reference [Listener] fields.
+ * @return A [List] of [KCallable] objects that reference [Listener] fields.
  */
-private val KClass<*>.listeners: Sequence<KCallable<Listener>>
+private inline val KClass<*>.listeners: Sequence<KCallable<Listener>>
     get() {
-        return this.allMembers.filter {
-            it.hasAnnotation<EventHandler>() && it.returnType.withNullability(false)
-                .isSubtypeOf(typeOf<Listener>()) && it.valueParameters.isEmpty()
+        return this.allMembers.filter { kCallable ->
+            kCallable.returnType.isSubtypeOf(typeOf<Listener>())
         } as Sequence<KCallable<Listener>>
     }
 
@@ -71,7 +68,7 @@ private val KClass<*>.listeners: Sequence<KCallable<Listener>>
  *
  * @return An [Array] of [Listener] fields inside this object.
  */
-val Any.listeners: Array<Listener>
+internal val Any.listeners: Array<Listener>
     get() {
         return this::class.listeners.let { sequence ->
             val array = arrayOfNulls<Listener>(sequence.count())

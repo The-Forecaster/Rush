@@ -8,7 +8,7 @@ import kotlin.reflect.KClass
  * @author Austin
  * @since 2022
  */
-interface Listener {
+interface Listener : Comparable<Listener> {
     /** The [KClass] of the target event */
     val target: KClass<*>
 
@@ -21,4 +21,8 @@ interface Listener {
      * @param param The Event object that is being processed.
      */
     operator fun invoke(param: Any)
+
+    override operator fun compareTo(other: Listener): Int {
+        return -this.priority.compareTo(other.priority)
+    }
 }

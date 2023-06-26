@@ -1,7 +1,7 @@
 package me.austin.rush
 
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.reflect.KClass
 import kotlin.reflect.full.allSuperclasses
 
@@ -20,7 +20,7 @@ open class EventDispatcher(private val recursive: Boolean = false) : EventBus {
      * The key-set will hold all stored [KClass] targets of [Listener] objects.
      * The value-set will hold the list of [Listener] objects corresponding to their respective targets.
      */
-    private val registry = ConcurrentHashMap<KClass<*>, CopyOnWriteArrayList<Listener>>()
+    private val registry = ConcurrentHashMap<KClass<*>, Array<Listener>>()
 
     /**
      * Map that is used to reduce the amount of reflection calls we have to make.
@@ -37,22 +37,30 @@ open class EventDispatcher(private val recursive: Boolean = false) : EventBus {
     override fun register(listener: Listener) {
         // TODO speed up the registering process
         synchronized(writeSync) {
-            val list = this.registry[listener.target]
+            val array = this.registry[listener.target]
 
-            if (list == null) {
-                this.registry[listener.target] = CopyOnWriteArrayList(arrayOf(listener))
-            } else if (!list.contains(listener)) {
+            this.registry[listener.target] = if (array == null) {
+                arrayOf(listener)
+            } else if (array.contains(listener)) {
+                array
+            } else {
                 var index = 0
 
-                while (index < list.size) {
-                    if (list[index].priority < listener.priority) {
+                while (index < array.size) {
+                    if (array[index].priority < listener.priority) {
                         break
                     }
 
                     index++
                 }
 
-                list.add(index, listener)
+                val newArray = arrayOfNulls<Listener>(array.size + 1)
+
+                System.arraycopy(array, 0, newArray, 0, index)
+                newArray[index] = listener
+                System.arraycopy(array, index, newArray, index + 1, array.size - index)
+
+                newArray as Array<Listener>
             }
         }
     }
@@ -60,23 +68,25 @@ open class EventDispatcher(private val recursive: Boolean = false) : EventBus {
     override fun unregister(listener: Listener) {
         // TODO speed up the unregistering process
         synchronized(writeSync) {
-            val list = this.registry[listener.target]
+            val array = this.registry[listener.target]
 
-            if (list != null) {
-                if (list.size == 1) {
+            if (array != null) {
+                val index = array.indexOf(listener)
+
+                if (index < 0) {
+                    return
+                }
+
+                if (array.size == 1) {
                     this.registry.remove(listener.target)
                 } else {
-                    val out = Array<Listener?>(list.size - 1) { null }
-                    var index = 0
+                    val newArray = arrayOfNulls<Listener>(array.size - 1)
 
-                    for (element in list) {
-                        if (element != listener) {
-                            out[index] = element
-                            index++
-                        }
-                    }
+                    // I hate arraycopy, this works though
+                    System.arraycopy(array, 0, newArray, 0, index)
+                    System.arraycopy(array, index + 1, newArray, index, array.size - index - 1)
 
-                    this.registry[listener.target] = CopyOnWriteArrayList(out)
+                    this.registry[listener.target] = newArray as Array<Listener>
                 }
             }
         }
@@ -85,11 +95,7 @@ open class EventDispatcher(private val recursive: Boolean = false) : EventBus {
     override fun register(subscriber: Any) {
         // TODO subscriber.listeners could probably be inlined somewhat
         for (listener in this.cache.getOrPut(subscriber) {
-            subscriber.listeners.let { list ->
-                Array(list.size) { index ->
-                    list[index]
-                }
-            }
+            subscriber.listeners
         }) {
             this.unregister(listener)
         }
@@ -97,18 +103,16 @@ open class EventDispatcher(private val recursive: Boolean = false) : EventBus {
 
     override fun unregister(subscriber: Any) {
         // If subscriber isn't in the cache then it hasn't been registered, so we don't need to unregister it
-        this.cache[subscriber]?.let {
-            for (listener in it) {
+        this.cache[subscriber]?.let { array ->
+            for (listener in array) {
                 this.unregister(listener)
             }
         }
     }
 
     override fun <T : Any> dispatch(event: T) {
-        this.dispatch(event) {
-            for (listener in it) {
-                listener(event)
-            }
+        this.dispatch0(event) { listener ->
+            listener(event)
         }
     }
 
@@ -121,13 +125,9 @@ open class EventDispatcher(private val recursive: Boolean = false) : EventBus {
      * @return [event].
      */
     open fun <T : Cancellable> dispatch(event: T): T {
-        this.dispatch(event) {
-            for (listener in it) {
+        this.dispatch0(event) { listener ->
+            if (!event.isCancelled) {
                 listener(event)
-
-                if (event.isCancelled) {
-                    break
-                }
             }
         }
 
@@ -138,21 +138,14 @@ open class EventDispatcher(private val recursive: Boolean = false) : EventBus {
      * For removing code duplication.
      *
      * @param T Type that will be posted to.
-     * @param R Type that [block] will return.
      * @param event Event to call from [registry].
      * @param block The code block to call if the list exists.
-     *
-     * @return The result of [block]. Will be null if there is no registered listeners.
      */
-    private fun <T : Any, R> dispatch(event: T, block: (MutableList<Listener>) -> R): R? {
-        val out = this.registry[event::class]?.let(block)
-
-        if (this.recursive) {
-            for (clazz in event::class.allSuperclasses) {
-                this.registry[clazz]?.let(block)
+    private fun <T : Any> dispatch0(event: T, block: (Listener) -> Unit) {
+        this.registry[event::class]?.let { array ->
+            for (listener in array) {
+                block(listener)
             }
         }
-
-        return out
     }
 }

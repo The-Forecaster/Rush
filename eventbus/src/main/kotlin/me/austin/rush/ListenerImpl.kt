@@ -14,13 +14,10 @@ import kotlin.reflect.KClass
  * @param priority How highly this listener should be prioritized when an event is posted.
  * @param action The lambda which will be called when an event is posted.
  */
-open class LambdaListener @PublishedApi internal constructor(
+class LambdaListener @PublishedApi internal constructor(
     override val target: KClass<*>, override val priority: Int, action: (Nothing) -> Unit
 ) : Listener {
-    /**
-     * Real action that will be called when an event is posted.
-     */
-    // This cast should never fail
+    // So we can avoid using generics
     internal val action = action as (Any) -> Unit
 
     override operator fun invoke(param: Any) {
@@ -36,7 +33,7 @@ open class LambdaListener @PublishedApi internal constructor(
  *
  * @return A new [LambdaListener] with the specified parameters.
  */
-inline fun <reified T> listener(noinline action: (T) -> Unit): Listener {
+inline fun <reified T : Any> listener(noinline action: (T) -> Unit): LambdaListener {
     return LambdaListener(T::class, -50, action)
 }
 
@@ -51,9 +48,9 @@ inline fun <reified T> listener(noinline action: (T) -> Unit): Listener {
  * @return A new [LambdaListener] with the specified parameters.
  */
 inline fun <reified T : Any> listener(
-    target: KClass<*> = T::class, priority: Int = -50, noinline action: (T) -> Unit
+    priority: Int = -50, noinline action: (T) -> Unit
 ): LambdaListener {
-    return LambdaListener(target, priority, action)
+    return LambdaListener(T::class, priority, action)
 }
 
 /**
@@ -82,20 +79,19 @@ fun <T : Any> listener(
  * @param scope The [CoroutineScope] to call [action] in. Will default to [defaultScope].
  * @param action The lambda which will be called when an event is posted.
  */
-open class AsyncListener @PublishedApi internal constructor(
+class AsyncListener @PublishedApi internal constructor(
     override val target: KClass<*>,
     override val priority: Int,
     private val scope: CoroutineScope,
     action: suspend (Nothing) -> Unit
 ) : Listener {
-    /**
-     * Real action that will be called when an event is posted.
-     */
-    // This cast should never ever fail
+    // So we can avoid using generics
     internal val action = action as suspend (Any) -> Unit
 
     override operator fun invoke(param: Any) {
-        scope.launch { action(param) }
+        scope.launch {
+            action(param)
+        }
     }
 }
 
@@ -107,7 +103,7 @@ open class AsyncListener @PublishedApi internal constructor(
  *
  * @return A new [AsyncListener] with the action.
  */
-inline fun <reified T> asyncListener(noinline action: suspend (T) -> Unit): AsyncListener {
+inline fun <reified T : Any> asyncListener(noinline action: suspend (T) -> Unit): AsyncListener {
     return AsyncListener(T::class, -50, defaultScope, action)
 }
 
@@ -123,10 +119,9 @@ inline fun <reified T> asyncListener(noinline action: suspend (T) -> Unit): Asyn
  * @return A new [AsyncListener] with the action.
  */
 inline fun <reified T : Any> asyncListener(
-    target: KClass<*> = T::class,
     priority: Int = -50,
     scope: CoroutineScope = defaultScope,
     noinline action: suspend (T) -> Unit
 ): AsyncListener {
-    return AsyncListener(target, priority, scope, action)
+    return AsyncListener(T::class, priority, scope, action)
 }
