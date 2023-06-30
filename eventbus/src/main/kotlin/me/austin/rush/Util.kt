@@ -1,7 +1,5 @@
 package me.austin.rush
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlin.reflect.KCallable
 import kotlin.reflect.KClass
 import kotlin.reflect.full.*
@@ -15,11 +13,6 @@ import kotlin.reflect.typeOf
  * @since 2022
  */
 annotation class EventHandler
-
-/**
- * Default [CoroutineScope] which be called when an [AsyncListener] is called.
- */
-val defaultScope = CoroutineScope(Dispatchers.Default)
 
 // Check out https://github.com/therealbush/eventbus-kotlin if you want to see where this logic comes from
 
@@ -48,35 +41,46 @@ private fun <R> KCallable<R>.handleCall(receiver: Any): R {
     val accessible = this.isAccessible
     this.isAccessible = true
     // Doing this so we don't leak accessibility
-    return try { this.call(receiver) } catch (e: Throwable) { this.call() } finally { this.isAccessible = accessible }
+    return try {
+        this.call(receiver)
+    } catch (e: Throwable) {
+        this.call()
+    } finally {
+        this.isAccessible = accessible
+    }
 }
 
 /**
- * Returns all [KCallable] fields in this class that reference [Listener] fields.
+ * Finds all [KCallable] fields in this class that reference [Listener] fields.
  *
  * @return A [List] of [KCallable] objects that reference [Listener] fields.
  */
 private inline val KClass<*>.listeners: Sequence<KCallable<Listener>>
     get() {
-        return this.allMembers.filter { kCallable ->
-            kCallable.returnType.isSubtypeOf(typeOf<Listener>())
+        return this.allMembers.filter { callable ->
+            callable.hasAnnotation<EventHandler>() && callable.returnType.withNullability(false)
+                .isSubtypeOf(typeOf<Listener>())
         } as Sequence<KCallable<Listener>>
     }
 
 /**
- * Finds all [Listener] fields inside this object's class.
+ * Gets all [Listener] fields inside this object's class.
  *
  * @return An [Array] of [Listener] fields inside this object.
  */
-internal val Any.listeners: Array<Listener>
+internal val Any.listenerArray: Array<Listener>
     get() {
-        return this::class.listeners.let { sequence ->
-            val array = arrayOfNulls<Listener>(sequence.count())
+        val array = arrayOfNulls<Listener>(this::class.listeners.count())
 
-            sequence.forEachIndexed { index, listener ->
-                array[index] = listener.handleCall(this)
-            }
-
-            array as Array<Listener>
+        for ((index, listener) in this::class.listeners.withIndex()) {
+            array[index] = listener.handleCall(this)
         }
+
+        return array as Array<Listener>
+    }
+
+
+internal val Any.listenerList: List<Listener>
+    get() {
+        return this::class.listeners.map { kCallable -> kCallable.handleCall(this) }.toList()
     }

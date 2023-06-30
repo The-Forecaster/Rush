@@ -1,6 +1,7 @@
 package me.austin.light
 
 import java.util.*
+import kotlin.collections.HashMap
 import kotlin.reflect.KClass
 
 /**
@@ -23,73 +24,82 @@ class EventBus(private val recursive: Boolean = true) {
     private val writeSync = Any()
 
     /**
-     * Adds a lambda to the [registry].
+     * Adds a [Handler] to the [registry].
      *
      * @param T The type the lambda accepts.
-     * @param handler The handler to be added to the registry.
+     * @param handler The handler to be added to the [registry].
      */
-    @Suppress("NON_PUBLIC_CALL_FROM_PUBLIC_INLINE", "UNCHECKED_CAST")
     inline fun <reified T : Any> register(handler: Handler<T>) {
-        synchronized(this.writeSync) {
-            val array = this.registry[T::class]
+        this.register(T::class, handler)
+    }
 
-            this.registry[T::class] = if (array == null) {
+    /**
+     * Adds a lambda to the registry, with a certain priority if desired.
+     * Note that this lambda cannot be removed.
+     *
+     * @param priority The priority which you want this lambda to be added at. Will default to `-50`.
+     * @param action Lambda to add to the [registry].
+     */
+    inline fun <reified T : Any> register(priority: Int = -50, noinline action: (T) -> Unit) {
+        this.register(Handler(priority, action))
+    }
+
+    /**
+     * Adds a [Handler] to the registry with the [KClass] target explicitly stated.
+     *
+     * @param type Type that the [Handler] will accept.
+     * @param handler The [Handler] to add to the [registry]
+     */
+    fun <T : Any> register(type: KClass<T>, handler: Handler<T>) {
+        synchronized(this.writeSync) {
+            val array = this.registry[type]
+
+            this.registry[type] = if (array == null) {
                 arrayOf(handler)
             } else if (array.contains(handler)) {
                 array
             } else {
-                when (array.size) {
-                    1 -> {
-                        arrayOf(array[0], handler)
-                    }
+                val newArray = arrayOfNulls<Handler<T>>(array.size + 1)
 
-                    2 -> {
-                        arrayOf(array[0], array[1], handler)
-                    }
-
-                    3 -> {
-                        arrayOf(array[0], array[1], array[2], handler)
-                    }
-
-                    else -> {
-                        val newArray = Array<Handler<T>?>(array.size + 1) { null }
-
-                        val index = Arrays.binarySearch(array, handler).let {
-                            if (it < 0) {
-                                -it - 1
-                            } else {
-                                it
-                            }
-                        }
-
-                        System.arraycopy(array, 0, newArray, 0, index)
-                        newArray[index] = handler
-                        System.arraycopy(array, index, newArray, index + 1, array.size - index)
-
-                        newArray
+                val index = Arrays.binarySearch(array, handler).let {
+                    // Doing this in case something goes wrong
+                    if (it < 0) {
+                        -it - 1
+                    } else {
+                        it
                     }
                 }
-            } as Array<Handler<*>>
+
+                System.arraycopy(array, 0, newArray, 0, index)
+                newArray[index] = handler
+                System.arraycopy(array, index, newArray, index + 1, array.size - index)
+
+                newArray as Array<Handler<*>>
+            }
         }
     }
 
-    inline fun <reified T : Any> register(priority: Int = -50, noinline action: (T) -> Unit) {
-        this.register<T>(Handler(priority, action))
+    /**
+     * Removes a [Handler] from the [registry].
+     *
+     * @param handler The handler to remove from the [registry].
+     */
+    inline fun <reified T : Any> unregister(handler: Handler<T>) {
+        this.unregister(T::class, handler)
     }
 
     /**
-     * Removes the specified action from the [registry].
+     * Removes a [Handler] from the [registry] with the [KClass] target specified.
      *
-     * @param handler The handler to remove from the registry.
+     * @param type Type that the [Handler] will accept.
+     * @param handler The [Handler] to add to the [registry]
      */
-    @Suppress("NON_PUBLIC_CALL_FROM_PUBLIC_INLINE", "UNCHECKED_CAST")
-    inline fun <reified T : Any> unregister(handler: Handler<T>) {
+    fun <T : Any> unregister(type: KClass<T>, handler: Handler<T>) {
         synchronized(writeSync) {
-            val array = this.registry[T::class]
-
-            if (array != null) {
+            // This might fuck with it, but I'm going to leave it for now
+            this.registry[type]?.let { array ->
                 if (array.size > 1) {
-                    val newArray = Array<Handler<T>?>(array.size - 1) { null }
+                    val newArray = arrayOfNulls<Handler<T>>(array.size - 1)
                     val index = array.indexOf(handler)
 
                     if (index < 0) {
@@ -99,9 +109,9 @@ class EventBus(private val recursive: Boolean = true) {
                     System.arraycopy(array, 0, newArray, 0, index)
                     System.arraycopy(array, index + 1, newArray, index, array.size - index - 1)
 
-                    this.registry[T::class] = newArray as Array<Handler<*>>
+                    this.registry[type] = newArray as Array<Handler<*>>
                 } else {
-                    this.registry.remove(T::class)
+                    this.registry.remove(type)
                 }
             }
         }
@@ -115,33 +125,25 @@ class EventBus(private val recursive: Boolean = true) {
      * @param event Event to be posted to all registered actions.
      */
     fun post(event: Any) {
-        this.registry[event::class]?.let {
-            for (handler in it) {
-                handler(event)
-            }
+        this.registry[event::class]?.forEach { handler ->
+            handler.callback(event)
         }
 
-        if (recursive) {
+        if (this.recursive) {
             var clazz: Class<*>? = event.javaClass.superclass
 
             while (clazz != null) {
-                this.registry[clazz.kotlin]?.let {
-                    for (handler in it) {
-                        handler(event)
-                    }
+                this.registry[clazz.kotlin]?.forEach { handler ->
+                    handler.callback(event)
                 }
                 clazz = clazz.superclass
             }
         }
     }
 
-    class Handler<T>(private val priority: Int = -50, handle: (T) -> Unit) : Comparable<Handler<*>> {
-        // This is shit
-        private val invoker = handle as (Any) -> Unit
-
-        operator fun invoke(param: Any) {
-            this.invoker(param)
-        }
+    class Handler<T>(private val priority: Int = -50, callback: (T) -> Unit) : Comparable<Handler<*>> {
+        // This is dumb, but it improves posting performance which is paramount.
+        internal val callback = callback as (Any) -> Unit
 
         override operator fun compareTo(other: Handler<*>): Int {
             return -this.priority.compareTo(other.priority)

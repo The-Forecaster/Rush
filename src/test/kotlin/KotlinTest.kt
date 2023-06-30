@@ -34,7 +34,37 @@ class KotlinTest {
                 delay(200)
             }
 
-            unregisterAll(list, async)
+            unregisterAll(listOf(list, async))
+
+            dispatch("I just posted another event")
+
+            runBlocking {
+                delay(200)
+            }
+        }
+    }
+
+    @Test
+    fun test_concurrent() {
+        val async = asyncListener<String>(priority = 40) {
+            delay(10)
+            println("$it that's delayed!")
+        }
+
+        val list = listener<String> { println("$it!") }
+
+        with(EventDispatcher()) {
+            registerAll(list, async)
+
+            register(KotlinTest())
+
+            dispatch("I just posted an event")
+
+            runBlocking {
+                delay(200)
+            }
+
+            unregisterAll(listOf(list, async))
 
             dispatch("I just posted another event")
 
@@ -46,12 +76,12 @@ class KotlinTest {
 
     @Test
     fun test_lightweight() {
-        val handler = EventBus.Handler<String>(-50) {
-            println("$it!!")
+        val handler = EventBus.Handler<String>(0) {
+            println("$it${"!"* 2}")
         }
 
         with(EventBus(false)) {
-            register<String> {
+            register<String>(1) {
                 println("$it!")
             }
 
@@ -64,4 +94,15 @@ class KotlinTest {
             post("I just posted another event")
         }
     }
+}
+
+// Added this because I was bored
+private operator fun String.times(i: Int): String {
+    var end = this
+
+    for (x in 1 until i) {
+        end += this
+    }
+
+    return end
 }

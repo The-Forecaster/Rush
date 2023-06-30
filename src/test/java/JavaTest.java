@@ -1,4 +1,4 @@
-import me.austin.rush.EventDispatcher;
+import me.austin.rush.ConcurrentEventDispatcher;
 import me.austin.rush.EventHandler;
 import me.austin.rush.LambdaListener;
 import org.junit.jupiter.api.Test;
@@ -11,7 +11,7 @@ final class JavaTest {
 
     @Test
     public void test() {
-        final EventDispatcher BUS = new EventDispatcher();
+        final ConcurrentEventDispatcher BUS = new ConcurrentEventDispatcher();
         final LambdaListener LIST = listener(String.class, event -> System.out.println(event + "!"));
 
         BUS.register(LIST);
