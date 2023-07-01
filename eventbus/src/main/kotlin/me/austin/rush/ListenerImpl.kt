@@ -77,11 +77,9 @@ class AsyncListener @PublishedApi internal constructor(
     // So we can avoid using generics
     private val action = action as suspend (Any) -> Unit
 
-    private lateinit var job: Job
-
     override operator fun invoke(param: Any) {
-        this.job = this.scope.launch {
-            action(param)
+        this.scope.launch {
+            this@AsyncListener.action(param)
         }
     }
 }

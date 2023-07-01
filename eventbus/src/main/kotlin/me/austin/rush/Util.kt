@@ -68,7 +68,7 @@ private inline val KClass<*>.listeners: Sequence<KCallable<Listener>>
  *
  * @return An [Array] of [Listener] fields inside this object.
  */
-internal val Any.listenerArray: Array<Listener>
+val Any.listenerArray: Array<Listener>
     get() {
         val array = arrayOfNulls<Listener>(this::class.listeners.count())
 
@@ -80,7 +80,7 @@ internal val Any.listenerArray: Array<Listener>
     }
 
 
-internal val Any.listenerList: List<Listener>
+val Any.listenerList: List<Listener>
     get() {
         return this::class.listeners.map { kCallable -> kCallable.handleCall(this) }.toList()
     }

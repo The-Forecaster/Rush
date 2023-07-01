@@ -16,14 +16,14 @@ class EventDispatcher : EventBus {
      * Map that will be used to store registered [Listener] objects and their targets.
      *
      * The key-set will hold all stored [KClass] targets of [Listener] objects.
-     * The value-set will hold the list of [Listener] objects corresponding to their respective targets.
+     * The value-set will hold the [MutableList] of [Listener] objects corresponding to their respective targets.
      */
     private val registry = ConcurrentHashMap<KClass<*>, MutableList<Listener>>()
 
     /**
      * Map that is used to reduce the amount of reflection calls we have to make.
      *
-     * The Key set stores an [Object] and the value set hold an [Array] of [Listener] fields in that object.
+     * The Key set stores an [Object] and the value set hold a [List] of [Listener] fields in that object.
      */
     private val cache = ConcurrentHashMap<Any, List<Listener>>()
 
@@ -55,10 +55,8 @@ class EventDispatcher : EventBus {
 
     override fun unregister(listener: Listener) {
         this.registry[listener.target]?.let { list ->
-            if (list.remove(listener)) {
-                if (list.isEmpty()) {
-                    this.registry.remove(listener.target)
-                }
+            if (list.remove(listener) && list.isEmpty()) {
+                this.registry.remove(listener.target)
             }
         }
     }

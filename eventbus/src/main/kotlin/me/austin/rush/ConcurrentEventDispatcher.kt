@@ -1,7 +1,5 @@
 package me.austin.rush
 
-import java.util.*
-import kotlin.collections.HashMap
 import kotlin.reflect.KClass
 
 /**
@@ -17,7 +15,7 @@ open class ConcurrentEventDispatcher(private val recursive: Boolean = false) : E
      * Map that will be used to store registered [Listener] objects and their targets.
      *
      * The key-set will hold all stored [KClass] targets of [Listener] objects.
-     * The value-set will hold the list of [Listener] objects corresponding to their respective targets.
+     * The value-set will hold the [Array] of [Listener] objects corresponding to their respective targets.
      */
     private val registry = HashMap<KClass<*>, Array<Listener>>()
 
@@ -34,7 +32,6 @@ open class ConcurrentEventDispatcher(private val recursive: Boolean = false) : E
     private val writeSync = Any()
 
     override fun register(listener: Listener) {
-        // TODO speed up the registering process
         synchronized(writeSync) {
             val array = this.registry[listener.target]
 
@@ -65,7 +62,6 @@ open class ConcurrentEventDispatcher(private val recursive: Boolean = false) : E
     }
 
     override fun unregister(listener: Listener) {
-        // TODO speed up the unregistering process
         synchronized(writeSync) {
             val array = this.registry[listener.target]
 
@@ -92,7 +88,6 @@ open class ConcurrentEventDispatcher(private val recursive: Boolean = false) : E
     }
 
     override fun register(subscriber: Any) {
-        // TODO subscriber.listeners could probably be inlined somewhat
         for (listener in this.cache.getOrDefault(subscriber, subscriber.listenerArray)) {
             this.register(listener)
         }
