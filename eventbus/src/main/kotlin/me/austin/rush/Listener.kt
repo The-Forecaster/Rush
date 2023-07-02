@@ -9,10 +9,10 @@ import kotlin.reflect.KClass
  * @since 2022
  */
 interface Listener : Comparable<Listener> {
-    /** The [KClass] of the target event */
+    /** The [KClass] of the target event. */
     val target: KClass<*>
 
-    /** The priority that the listener will be called upon */
+    /** The priority that the listener will be called upon. */
     val priority: Int
 
     /**

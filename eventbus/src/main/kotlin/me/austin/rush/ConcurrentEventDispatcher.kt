@@ -3,31 +3,29 @@ package me.austin.rush
 import kotlin.reflect.KClass
 
 /**
- * Thread-safe implementation of [EventBus]
+ * Thread-safe implementation of [EventBus].
  *
  * @author Austin
  * @since 2022
- *
- * @param recursive If this eventbus posts superclasses of events posted.
  */
-open class ConcurrentEventDispatcher(private val recursive: Boolean = false) : EventBus {
+open class ConcurrentEventDispatcher() : EventBus {
     /**
      * Map that will be used to store registered [Listener] objects and their targets.
      *
      * The key-set will hold all stored [KClass] targets of [Listener] objects.
      * The value-set will hold the [Array] of [Listener] objects corresponding to their respective targets.
      */
-    private val registry = HashMap<KClass<*>, Array<Listener>>()
+    private val registry = mutableMapOf<KClass<*>, Array<Listener>>()
 
     /**
      * Map that is used to reduce the amount of reflection calls we have to make.
      *
      * The Key set stores an [Object] and the value set hold an [Array] of [Listener] fields in that object.
      */
-    private val cache = HashMap<Any, Array<Listener>>()
+    private val cache = mutableMapOf<Any, Array<Listener>>()
 
     /**
-     * This is so we only ever have 1 write action going on at a time
+     * This is so we only ever have 1 write action going on at a time.
      */
     private val writeSync = Any()
 

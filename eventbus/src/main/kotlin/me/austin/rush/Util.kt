@@ -32,7 +32,7 @@ private val KClass<*>.allMembers: Sequence<KCallable<*>>
 /**
  * Unwraps the object referenced in a [KCallable].
  *
- * @param R Type parameter of the [KCallable]
+ * @param R Type parameter of the [KCallable].
  * @param receiver Object containing the [KCallable] if it is non-static.
  *
  * @return The [R] referenced by the [KCallable].
@@ -79,7 +79,11 @@ val Any.listenerArray: Array<Listener>
         return array as Array<Listener>
     }
 
-
+/**
+ * Returns all [Listener] fields inside this object's class.
+ *
+ * @return A [List] of [Listener] fields inside this object
+ */
 val Any.listenerList: List<Listener>
     get() {
         return this::class.listeners.map { kCallable -> kCallable.handleCall(this) }.toList()

@@ -95,7 +95,8 @@ class AsyncListener @PublishedApi internal constructor(
  */
 inline fun <reified T : Any> asyncListener(
     priority: Int = -50,
+    scope: CoroutineScope = CoroutineScope(Dispatchers.Default),
     noinline action: suspend (T) -> Unit
 ): AsyncListener {
-    return AsyncListener(T::class, priority, CoroutineScope(Dispatchers.Default), action)
+    return AsyncListener(T::class, priority, scope, action)
 }

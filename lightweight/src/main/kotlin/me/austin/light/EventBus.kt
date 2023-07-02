@@ -1,11 +1,12 @@
 package me.austin.light
 
+import me.austin.light.EventBus.Handler
 import java.util.*
-import kotlin.collections.HashMap
 import kotlin.reflect.KClass
 
 /**
  * Extremely lightweight event-bus made for kotlin use.
+ * This does not contain any reflection, so you will either have to directly register lambda functions or instantiate a [Handler] object and then register that.
  *
  * @author Austin
  * @since 2023
@@ -16,7 +17,7 @@ class EventBus(private val recursive: Boolean = true) {
     /**
      * For all the classes of events and the lambdas which target them.
      */
-    private val registry = HashMap<KClass<*>, Array<Handler<*>>>()
+    private val registry = mutableMapOf<KClass<*>, Array<Handler<*>>>()
 
     /**
      * This is so we only ever have 1 write action going on at a time.
