@@ -90,8 +90,8 @@ open class EventDispatcher : EventBus {
      * @return [event].
      */
     open fun <T : Cancellable> dispatch(event: T): T {
-        this.registry[event::class]?.let { array ->
-            for (listener in array) {
+        this.registry[event::class]?.let { list ->
+            for (listener in list) {
                 listener(event)
 
                 if (event.isCancelled) {

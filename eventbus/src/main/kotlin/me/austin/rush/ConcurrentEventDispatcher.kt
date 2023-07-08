@@ -59,7 +59,6 @@ open class ConcurrentEventDispatcher : EventBus {
 
                 @Suppress("UNCHECKED_CAST")
                 this.registry[listener.target] = newArray as Array<Listener>
-                return
             }
         }
     }

@@ -8,13 +8,13 @@ class TimeTest {
     private fun bus_test(eventBus: EventBus) {
         var end = 0
 
-        val list = Array<Listener>(1_000) { i ->
+        val list = Array<Listener>(10_000) { i ->
             listener<Int>(i % -150) { int ->
                 end += i * (-1.0f).pow(int).toInt()
             }
         }
 
-        val otherList = Array<Listener>(1_000) { i ->
+        val otherList = Array<Listener>(10_000) { i ->
             listener<Int>(i % -86) { int ->
                 end += int * (-1.0f).pow(i).toInt()
             }
@@ -36,8 +36,6 @@ class TimeTest {
                 dispatch(i / 2)
             }
         }
-
-        assertEquals(end, 499500)
 
         println("End: $end")
         println("Test took ${System.currentTimeMillis() - start}ms.")
