@@ -1,46 +1,48 @@
 package me.austin.rush
 
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.CopyOnWriteArrayList
+import java.util.*
 import kotlin.reflect.KClass
 
 /**
  * Basic implementation of [EventBus].
+ * This version is much faster than [ConcurrentEventDispatcher] but is not thread safe and can produce race conditions if running multithreaded or non-blocking projects.
  *
  * @author Austin
  * @since 2023
  *
  */
-class EventDispatcher : EventBus {
+open class EventDispatcher : EventBus {
     /**
      * Map that will be used to store registered [Listener] objects and their targets.
      *
      * The key-set will hold all stored [KClass] targets of [Listener] objects.
      * The value-set will hold the [MutableList] of [Listener] objects corresponding to their respective targets.
      */
-    private val registry = ConcurrentHashMap<KClass<*>, MutableList<Listener>>()
+    private val registry = mutableMapOf<KClass<*>, MutableList<Listener>>()
 
     /**
      * Map that is used to reduce the amount of reflection calls we have to make.
      *
-     * The Key set stores an [Object] and the value set hold a [List] of [Listener] fields in that object.
+     * The Key set stores an [Object] and the value set holds a [List] of [Listener] fields in that object.
      */
-    private val cache = ConcurrentHashMap<Any, List<Listener>>()
+    private val cache = mutableMapOf<Any, List<Listener>>()
 
     override fun register(listener: Listener) {
-        this.registry.getOrPut(listener.target) { CopyOnWriteArrayList() }.let { list ->
-            if (list.contains(listener)) {
+        val list = this.registry[listener.target]
+
+        if (list == null) {
+            this.registry[listener.target] = mutableListOf(listener)
+        } else {
+            if (listener in list) {
                 return
             }
 
-            var index = 0
-
-            while (index < list.size) {
-                if (list[index].priority < listener.priority) {
-                    break
+            val index = Collections.binarySearch(list, listener).let { i ->
+                if (i < 0) {
+                    -i - 1
+                } else {
+                    i
                 }
-
-                index++
             }
 
             list.add(index, listener)
@@ -48,15 +50,17 @@ class EventDispatcher : EventBus {
     }
 
     override fun register(subscriber: Any) {
-        for (listener in this.cache.getOrPut(subscriber) { subscriber.listenerList }) {
+        for (listener in this.cache.getOrDefault(subscriber, subscriber.listenerList)) {
             this.register(listener)
         }
     }
 
     override fun unregister(listener: Listener) {
         this.registry[listener.target]?.let { list ->
-            if (list.remove(listener) && list.isEmpty()) {
-                this.registry.remove(listener.target)
+            if (list.remove(listener)) {
+                if (list.isEmpty()) {
+                    this.registry.remove(listener.target)
+                }
             }
         }
     }
@@ -64,7 +68,7 @@ class EventDispatcher : EventBus {
     override fun unregister(subscriber: Any) {
         this.cache[subscriber]?.let { list ->
             for (listener in list) {
-                this.unregister(list)
+                this.unregister(listener)
             }
         }
     }
@@ -75,5 +79,27 @@ class EventDispatcher : EventBus {
                 listener(event)
             }
         }
+    }
+
+    /**
+     * Dispatches an event that is cancellable.
+     * When the event is cancelled it will not be posted to any listeners after.
+     *
+     * @param T The type of the [event] posted.
+     * @param event The event which will be posted.
+     * @return [event].
+     */
+    open fun <T : Cancellable> dispatch(event: T): T {
+        this.registry[event::class]?.let { array ->
+            for (listener in array) {
+                listener(event)
+
+                if (event.isCancelled) {
+                    break
+                }
+            }
+        }
+
+        return event
     }
 }

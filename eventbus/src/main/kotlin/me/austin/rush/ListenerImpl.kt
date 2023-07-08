@@ -2,7 +2,6 @@ package me.austin.rush
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import java.util.function.Consumer
 import kotlin.reflect.KClass
@@ -20,6 +19,7 @@ class LambdaListener @PublishedApi internal constructor(
     override val target: KClass<*>, override val priority: Int, action: (Nothing) -> Unit
 ) : Listener {
     // So we can avoid using generics
+    @Suppress("UNCHECKED_CAST")
     private val action = action as (Any) -> Unit
 
     override operator fun invoke(param: Any) {
@@ -75,6 +75,7 @@ class AsyncListener @PublishedApi internal constructor(
     action: suspend (Nothing) -> Unit
 ) : Listener {
     // So we can avoid using generics
+    @Suppress("UNCHECKED_CAST")
     private val action = action as suspend (Any) -> Unit
 
     override operator fun invoke(param: Any) {
@@ -89,6 +90,7 @@ class AsyncListener @PublishedApi internal constructor(
  *
  * @param T The type that [action] will accept.
  * @param priority The priority which this listener will be called when an event is posted. Will default to `-50`.
+ * @param scope The [CoroutineScope] to call [action] in. Will default to [Dispatchers.Default]
  * @param action The lambda that will call when an event is posted.
  *
  * @return A new [AsyncListener] with the action.

@@ -1,14 +1,16 @@
 package me.austin.rush
 
+import java.util.*
 import kotlin.reflect.KClass
 
 /**
  * Thread-safe implementation of [EventBus].
+ * This version is slower than [EventDispatcher] but is thread safe for multithreaded or non-blocking projects.
  *
  * @author Austin
  * @since 2022
  */
-open class ConcurrentEventDispatcher() : EventBus {
+open class ConcurrentEventDispatcher : EventBus {
     /**
      * Map that will be used to store registered [Listener] objects and their targets.
      *
@@ -27,25 +29,26 @@ open class ConcurrentEventDispatcher() : EventBus {
     /**
      * This is so we only ever have 1 write action going on at a time.
      */
+    // Need to make sure this won't double lock, more tests coming in the future
     private val writeSync = Any()
 
     override fun register(listener: Listener) {
         synchronized(writeSync) {
             val array = this.registry[listener.target]
 
-            this.registry[listener.target] = if (array == null) {
-                arrayOf(listener)
-            } else if (array.contains(listener)) {
-                array
+            if (array == null) {
+                this.registry[listener.target] = arrayOf(listener)
             } else {
-                var index = 0
+                if (listener in array) {
+                    return
+                }
 
-                while (index < array.size) {
-                    if (array[index].priority < listener.priority) {
-                        break
+                val index = Arrays.binarySearch(array, listener).let { i ->
+                    if (i < 0) {
+                        -i - 1
+                    } else {
+                        i
                     }
-
-                    index++
                 }
 
                 val newArray = arrayOfNulls<Listener>(array.size + 1)
@@ -54,7 +57,9 @@ open class ConcurrentEventDispatcher() : EventBus {
                 newArray[index] = listener
                 System.arraycopy(array, index, newArray, index + 1, array.size - index)
 
-                newArray as Array<Listener>
+                @Suppress("UNCHECKED_CAST")
+                this.registry[listener.target] = newArray as Array<Listener>
+                return
             }
         }
     }
@@ -75,10 +80,11 @@ open class ConcurrentEventDispatcher() : EventBus {
                 } else {
                     val newArray = arrayOfNulls<Listener>(array.size - 1)
 
-                    // I hate arraycopy, this works though
+                    // Copy around the listener
                     System.arraycopy(array, 0, newArray, 0, index)
                     System.arraycopy(array, index + 1, newArray, index, array.size - index - 1)
 
+                    @Suppress("UNCHECKED_CAST")
                     this.registry[listener.target] = newArray as Array<Listener>
                 }
             }

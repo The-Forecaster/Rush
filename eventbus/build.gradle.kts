@@ -1,32 +1,13 @@
-plugins {
-    kotlin("jvm") version "1.8.22"
-    id("org.jetbrains.dokka") version "1.8.10"
-}
-
 val kotlinVersion: String by project
-
-repositories {
-    mavenCentral()
-}
+val coroutinesVersion: String by project
 
 dependencies {
-    implementation(kotlin(module = "stdlib", version = kotlinVersion))
-    implementation(kotlin(module = "reflect", version = kotlinVersion))
-    implementation(kotlin(module = "stdlib-jdk8", version = kotlinVersion))
-    implementation(group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version = "1.7.0-RC")
-}
+    // Standard library
+    implementation(kotlin("stdlib", kotlinVersion))
 
-java {
-    withSourcesJar()
-    withJavadocJar()
-}
+    // Reflection library
+    implementation(kotlin("reflect", kotlinVersion))
 
-kotlin {
-    jvmToolchain(17)
-}
-
-tasks {
-    named<Jar>("javadocJar") {
-        from(named("dokkaJavadoc"))
-    }
+    // Coroutine library
+    implementation(group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version = coroutinesVersion)
 }

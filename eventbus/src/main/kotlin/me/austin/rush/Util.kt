@@ -32,6 +32,8 @@ private val KClass<*>.allMembers: Sequence<KCallable<*>>
 /**
  * Unwraps the object referenced in a [KCallable].
  *
+ * @receiver [KCallable] that you want to unwrap.
+ *
  * @param R Type parameter of the [KCallable].
  * @param receiver Object containing the [KCallable] if it is non-static.
  *
@@ -57,6 +59,7 @@ private fun <R> KCallable<R>.handleCall(receiver: Any): R {
  */
 private inline val KClass<*>.listeners: Sequence<KCallable<Listener>>
     get() {
+        @Suppress("UNCHECKED_CAST")
         return this.allMembers.filter { callable ->
             callable.hasAnnotation<EventHandler>() && callable.returnType.withNullability(false)
                 .isSubtypeOf(typeOf<Listener>())
@@ -76,6 +79,7 @@ val Any.listenerArray: Array<Listener>
             array[index] = listener.handleCall(this)
         }
 
+        @Suppress("UNCHECKED_CAST")
         return array as Array<Listener>
     }
 

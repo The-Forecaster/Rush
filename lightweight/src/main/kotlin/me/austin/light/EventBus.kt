@@ -22,7 +22,45 @@ class EventBus(private val recursive: Boolean = true) {
     /**
      * This is so we only ever have 1 write action going on at a time.
      */
+    // Need to make sure this won't double lock, more tests coming in the future
     private val writeSync = Any()
+
+    /**
+     * Adds a [Handler] to the registry with the [KClass] target explicitly stated.
+     *
+     * @param type Type that the [Handler] will accept.
+     * @param handler The [Handler] to add to the [registry]
+     */
+    fun <T : Any> register(type: KClass<T>, handler: Handler<T>) {
+        synchronized(this.writeSync) {
+            val array = this.registry[type]
+
+            if (array == null) {
+                this.registry[type] = arrayOf(handler)
+            } else {
+                if (handler in array) {
+                    return
+                }
+
+                val newArray = arrayOfNulls<Handler<T>>(array.size + 1)
+
+                val index = Arrays.binarySearch(array, handler).let { i ->
+                    if (i < 0) {
+                        -i - 1
+                    } else {
+                        i
+                    }
+                }
+
+                System.arraycopy(array, 0, newArray, 0, index)
+                newArray[index] = handler
+                System.arraycopy(array, index, newArray, index + 1, array.size - index)
+
+                @Suppress("UNCHECKED_CAST")
+                this.registry[type] = newArray as Array<Handler<*>>
+            }
+        }
+    }
 
     /**
      * Adds a [Handler] to the [registry].
@@ -46,50 +84,6 @@ class EventBus(private val recursive: Boolean = true) {
     }
 
     /**
-     * Adds a [Handler] to the registry with the [KClass] target explicitly stated.
-     *
-     * @param type Type that the [Handler] will accept.
-     * @param handler The [Handler] to add to the [registry]
-     */
-    fun <T : Any> register(type: KClass<T>, handler: Handler<T>) {
-        synchronized(this.writeSync) {
-            val array = this.registry[type]
-
-            this.registry[type] = if (array == null) {
-                arrayOf(handler)
-            } else if (array.contains(handler)) {
-                array
-            } else {
-                val newArray = arrayOfNulls<Handler<T>>(array.size + 1)
-
-                val index = Arrays.binarySearch(array, handler).let {
-                    // Doing this in case something goes wrong
-                    if (it < 0) {
-                        -it - 1
-                    } else {
-                        it
-                    }
-                }
-
-                System.arraycopy(array, 0, newArray, 0, index)
-                newArray[index] = handler
-                System.arraycopy(array, index, newArray, index + 1, array.size - index)
-
-                newArray as Array<Handler<*>>
-            }
-        }
-    }
-
-    /**
-     * Removes a [Handler] from the [registry].
-     *
-     * @param handler The handler to remove from the [registry].
-     */
-    inline fun <reified T : Any> unregister(handler: Handler<T>) {
-        this.unregister(T::class, handler)
-    }
-
-    /**
      * Removes a [Handler] from the [registry] with the [KClass] target specified.
      *
      * @param type Type that the [Handler] will accept.
@@ -110,12 +104,22 @@ class EventBus(private val recursive: Boolean = true) {
                     System.arraycopy(array, 0, newArray, 0, index)
                     System.arraycopy(array, index + 1, newArray, index, array.size - index - 1)
 
+                    @Suppress("UNCHECKED_CAST")
                     this.registry[type] = newArray as Array<Handler<*>>
                 } else {
                     this.registry.remove(type)
                 }
             }
         }
+    }
+
+    /**
+     * Removes a [Handler] from the [registry].
+     *
+     * @param handler The handler to remove from the [registry].
+     */
+    inline fun <reified T : Any> unregister(handler: Handler<T>) {
+        this.unregister(T::class, handler)
     }
 
     /**
@@ -144,6 +148,7 @@ class EventBus(private val recursive: Boolean = true) {
 
     class Handler<T>(private val priority: Int = -50, callback: (T) -> Unit) : Comparable<Handler<*>> {
         // This is dumb, but it improves posting performance which is paramount.
+        @Suppress("UNCHECKED_CAST")
         internal val callback = callback as (Any) -> Unit
 
         override operator fun compareTo(other: Handler<*>): Int {

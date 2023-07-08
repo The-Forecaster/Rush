@@ -1,7 +1,10 @@
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import me.austin.light.EventBus
-import me.austin.rush.*
+import me.austin.rush.EventDispatcher
+import me.austin.rush.EventHandler
+import me.austin.rush.asyncListener
+import me.austin.rush.listener
 import org.junit.jupiter.api.Test
 
 class KotlinTest {
@@ -12,11 +15,21 @@ class KotlinTest {
     }
 
     @EventHandler
-    val listener = listener<String>(priority = 60) { println("$it with higher priority!") }
+    val listener = listener<String>(60) { println("$it with higher priority!") }
+
+    @EventHandler
+    val l = listener<String> {
+        println("Stuff: $it")
+    }
+
+    @EventHandler
+    val ll = listener<String> {
+        println("Stuff more: $it")
+    }
 
     @Test
     fun test() {
-        val async = asyncListener<String>(priority = 40) {
+        val async = asyncListener<String>(40) {
             delay(10)
             println("$it that's delayed!")
         }
@@ -46,7 +59,7 @@ class KotlinTest {
 
     @Test
     fun test_concurrent() {
-        val async = asyncListener<String>(priority = 40) {
+        val async = asyncListener<String>(40) {
             delay(10)
             println("$it that's delayed!")
         }
@@ -77,7 +90,7 @@ class KotlinTest {
     @Test
     fun test_lightweight() {
         val handler = EventBus.Handler<String>(0) {
-            println("$it${"!"* 2}")
+            println("$it with higher priority")
         }
 
         with(EventBus(false)) {
@@ -94,15 +107,4 @@ class KotlinTest {
             post("I just posted another event")
         }
     }
-}
-
-// Added this because I was bored
-private operator fun String.times(i: Int): String {
-    var end = this
-
-    for (x in 1 until i) {
-        end += this
-    }
-
-    return end
 }

@@ -1,3 +1,2 @@
 rootProject.name = "rush"
-include("eventbus")
-include("lightweight")
+include("eventbus", "lightweight")
