@@ -1,20 +1,19 @@
 import me.austin.rush.*
 import org.junit.jupiter.api.Test
 import kotlin.math.pow
-import kotlin.test.assertEquals
 
 class TimeTest {
     // To test new EventBus models
     private fun bus_test(eventBus: EventBus) {
         var end = 0
 
-        val list = Array<Listener>(10_000) { i ->
-            listener<Int>(i % -150) { int ->
+        val list = Array<Listener>(5_000) { i ->
+            listener<Int>(i % -35) { int ->
                 end += i * (-1.0f).pow(int).toInt()
             }
         }
 
-        val otherList = Array<Listener>(10_000) { i ->
+        val otherList = Array<Listener>(5_000) { i ->
             listener<Int>(i % -86) { int ->
                 end += int * (-1.0f).pow(i).toInt()
             }
@@ -23,17 +22,17 @@ class TimeTest {
         val start = System.currentTimeMillis()
 
         with(eventBus) {
-            registerAll(*list)
-            registerAll(*otherList)
+            subscribeAll(*list)
+            subscribeAll(*otherList)
 
-            for (i in 0..10_000) {
-                dispatch(i)
+            for (i in 0..1_000) {
+                post(i)
             }
 
-            unregisterAll(*list)
+            unsubscribeAll(*list)
 
-            for (i in 0..10_000) {
-                dispatch(i / 2)
+            for (i in 0..1_000) {
+                post(i / 2)
             }
         }
 

@@ -12,8 +12,7 @@ abstract class Cancellable {
      *
      * If an event is cancelled then it will not be posted to listeners after it has been cancelled.
      */
-    var isCancelled = false
-        private set
+    abstract var isCancelled: Boolean
 
     /**
      * Use this function to set isCancelled to true.

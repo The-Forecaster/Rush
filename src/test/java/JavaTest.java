@@ -14,9 +14,9 @@ final class JavaTest {
         final ConcurrentEventDispatcher BUS = new ConcurrentEventDispatcher();
         final LambdaListener LIST = listener(String.class, event -> System.out.println(event + "!"));
 
-        BUS.register(LIST);
-        BUS.register(new JavaTest());
+        BUS.subscribe(LIST);
+        BUS.subscribe(new JavaTest());
 
-        BUS.dispatch("I just posted an event");
+        BUS.post("I just posted an event");
     }
 }

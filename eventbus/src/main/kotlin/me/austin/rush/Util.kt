@@ -21,7 +21,7 @@ annotation class EventHandler
  * doesn't return inherited members. This function, while slower than those two, is able
  * to retrieve all [KCallable] members inside a class.
  *
- * @return A [List] of all members, private and inherited.
+ * @return A [Sequence] of all members, private and inherited.
  */
 private val KClass<*>.allMembers: Sequence<KCallable<*>>
     get() {
@@ -55,7 +55,7 @@ private fun <R> KCallable<R>.handleCall(receiver: Any): R {
 /**
  * Finds all [KCallable] fields in this class that reference [Listener] fields.
  *
- * @return A [List] of [KCallable] objects that reference [Listener] fields.
+ * @return A [Sequence] of [KCallable] objects that reference [Listener] fields.
  */
 private inline val KClass<*>.listeners: Sequence<KCallable<Listener>>
     get() {

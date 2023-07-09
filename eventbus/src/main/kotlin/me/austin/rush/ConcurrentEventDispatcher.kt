@@ -17,7 +17,7 @@ open class ConcurrentEventDispatcher : EventBus {
      * The key-set will hold all stored [KClass] targets of [Listener] objects.
      * The value-set will hold the [Array] of [Listener] objects corresponding to their respective targets.
      */
-    private val registry = mutableMapOf<KClass<*>, Array<Listener>>()
+    private val subscribers = mutableMapOf<KClass<*>, Array<Listener>>()
 
     /**
      * Map that is used to reduce the amount of reflection calls we have to make.
@@ -32,12 +32,12 @@ open class ConcurrentEventDispatcher : EventBus {
     // Need to make sure this won't double lock, more tests coming in the future
     private val writeSync = Any()
 
-    override fun register(listener: Listener) {
+    override fun subscribe(listener: Listener) {
         synchronized(writeSync) {
-            val array = this.registry[listener.target]
+            val array = this.subscribers[listener.target]
 
             if (array == null) {
-                this.registry[listener.target] = arrayOf(listener)
+                this.subscribers[listener.target] = arrayOf(listener)
             } else {
                 if (listener in array) {
                     return
@@ -58,14 +58,14 @@ open class ConcurrentEventDispatcher : EventBus {
                 System.arraycopy(array, index, newArray, index + 1, array.size - index)
 
                 @Suppress("UNCHECKED_CAST")
-                this.registry[listener.target] = newArray as Array<Listener>
+                this.subscribers[listener.target] = newArray as Array<Listener>
             }
         }
     }
 
-    override fun unregister(listener: Listener) {
+    override fun unsubscribe(listener: Listener) {
         synchronized(writeSync) {
-            val array = this.registry[listener.target]
+            val array = this.subscribers[listener.target]
 
             if (array != null) {
                 val index = array.indexOf(listener)
@@ -75,7 +75,7 @@ open class ConcurrentEventDispatcher : EventBus {
                 }
 
                 if (array.size == 1) {
-                    this.registry.remove(listener.target)
+                    this.subscribers.remove(listener.target)
                 } else {
                     val newArray = arrayOfNulls<Listener>(array.size - 1)
 
@@ -84,29 +84,29 @@ open class ConcurrentEventDispatcher : EventBus {
                     System.arraycopy(array, index + 1, newArray, index, array.size - index - 1)
 
                     @Suppress("UNCHECKED_CAST")
-                    this.registry[listener.target] = newArray as Array<Listener>
+                    this.subscribers[listener.target] = newArray as Array<Listener>
                 }
             }
         }
     }
 
-    override fun register(subscriber: Any) {
+    override fun subscribe(subscriber: Any) {
         for (listener in this.cache.getOrDefault(subscriber, subscriber.listenerArray)) {
-            this.register(listener)
+            this.subscribe(listener)
         }
     }
 
-    override fun unregister(subscriber: Any) {
+    override fun unsubscribe(subscriber: Any) {
         // If subscriber isn't in the cache then it hasn't been registered, so we don't need to unregister it
         this.cache[subscriber]?.let { array ->
             for (listener in array) {
-                this.unregister(listener)
+                this.unsubscribe(listener)
             }
         }
     }
 
-    override fun <T : Any> dispatch(event: T) {
-        this.registry[event::class]?.let { array ->
+    override fun <T : Any> post(event: T) {
+        this.subscribers[event::class]?.let { array ->
             for (listener in array) {
                 listener(event)
             }
@@ -121,8 +121,8 @@ open class ConcurrentEventDispatcher : EventBus {
      * @param event The event which will be posted.
      * @return [event].
      */
-    open fun <T : Cancellable> dispatch(event: T): T {
-        this.registry[event::class]?.let { array ->
+    open fun <T : Cancellable> post(event: T): T {
+        this.subscribers[event::class]?.let { array ->
             for (listener in array) {
                 listener(event)
 

@@ -18,7 +18,7 @@ open class EventDispatcher : EventBus {
      * The key-set will hold all stored [KClass] targets of [Listener] objects.
      * The value-set will hold the [MutableList] of [Listener] objects corresponding to their respective targets.
      */
-    private val registry = mutableMapOf<KClass<*>, MutableList<Listener>>()
+    private val subscribers = mutableMapOf<KClass<*>, MutableList<Listener>>()
 
     /**
      * Map that is used to reduce the amount of reflection calls we have to make.
@@ -27,11 +27,11 @@ open class EventDispatcher : EventBus {
      */
     private val cache = mutableMapOf<Any, List<Listener>>()
 
-    override fun register(listener: Listener) {
-        val list = this.registry[listener.target]
+    override fun subscribe(listener: Listener) {
+        val list = this.subscribers[listener.target]
 
         if (list == null) {
-            this.registry[listener.target] = mutableListOf(listener)
+            this.subscribers[listener.target] = mutableListOf(listener)
         } else {
             if (listener in list) {
                 return
@@ -49,32 +49,30 @@ open class EventDispatcher : EventBus {
         }
     }
 
-    override fun register(subscriber: Any) {
+    override fun subscribe(subscriber: Any) {
         for (listener in this.cache.getOrDefault(subscriber, subscriber.listenerList)) {
-            this.register(listener)
+            this.subscribe(listener)
         }
     }
 
-    override fun unregister(listener: Listener) {
-        this.registry[listener.target]?.let { list ->
-            if (list.remove(listener)) {
-                if (list.isEmpty()) {
-                    this.registry.remove(listener.target)
-                }
+    override fun unsubscribe(listener: Listener) {
+        this.subscribers[listener.target]?.let { list ->
+            if (list.remove(listener) && list.isEmpty()) {
+                this.subscribers.remove(listener.target)
             }
         }
     }
 
-    override fun unregister(subscriber: Any) {
+    override fun unsubscribe(subscriber: Any) {
         this.cache[subscriber]?.let { list ->
             for (listener in list) {
-                this.unregister(listener)
+                this.unsubscribe(listener)
             }
         }
     }
 
-    override fun <T : Any> dispatch(event: T) {
-        this.registry[event::class]?.let { list ->
+    override fun <T : Any> post(event: T) {
+        this.subscribers[event::class]?.let { list ->
             for (listener in list) {
                 listener(event)
             }
@@ -89,8 +87,8 @@ open class EventDispatcher : EventBus {
      * @param event The event which will be posted.
      * @return [event].
      */
-    open fun <T : Cancellable> dispatch(event: T): T {
-        this.registry[event::class]?.let { list ->
+    open fun <T : Cancellable> post(event: T): T {
+        this.subscribers[event::class]?.let { list ->
             for (listener in list) {
                 listener(event)
 

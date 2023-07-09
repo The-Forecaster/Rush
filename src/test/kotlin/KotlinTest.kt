@@ -37,19 +37,19 @@ class KotlinTest {
         val list = listener<String> { println("$it!") }
 
         with(EventDispatcher()) {
-            registerAll(list, async)
+            subscribeAll(list, async)
 
-            register(KotlinTest())
+            subscribe(KotlinTest())
 
-            dispatch("I just posted an event")
+            post("I just posted an event")
 
             runBlocking {
                 delay(200)
             }
 
-            unregisterAll(listOf(list, async))
+            unsubscribeAll(listOf(list, async))
 
-            dispatch("I just posted another event")
+            post("I just posted another event")
 
             runBlocking {
                 delay(200)
@@ -67,19 +67,19 @@ class KotlinTest {
         val list = listener<String> { println("$it!") }
 
         with(EventDispatcher()) {
-            registerAll(list, async)
+            subscribeAll(list, async)
 
-            register(KotlinTest())
+            subscribe(KotlinTest())
 
-            dispatch("I just posted an event")
+            post("I just posted an event")
 
             runBlocking {
                 delay(200)
             }
 
-            unregisterAll(listOf(list, async))
+            unsubscribeAll(listOf(list, async))
 
-            dispatch("I just posted another event")
+            post("I just posted another event")
 
             runBlocking {
                 delay(200)
@@ -94,15 +94,15 @@ class KotlinTest {
         }
 
         with(EventBus(false)) {
-            register<String>(1) {
+            subscribe<String>(1) {
                 println("$it!")
             }
 
-            register(handler)
+            subscribe(handler)
 
             post("I just posted an event")
 
-            unregister(handler)
+            unsubscribe(handler)
 
             post("I just posted another event")
         }
