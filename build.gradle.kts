@@ -20,6 +20,10 @@ subprojects {
         mavenCentral()
     }
 
+    dependencies {
+        implementation(kotlin("stdlib", kotlinVersion))
+    }
+
     java {
         withSourcesJar()
         withJavadocJar()
@@ -50,6 +54,10 @@ dependencies {
     // Subprojects
     testImplementation(project(":eventbus"))
     testImplementation(project(":lightweight"))
+}
+
+kotlin {
+    jvmToolchain(17)
 }
 
 tasks {

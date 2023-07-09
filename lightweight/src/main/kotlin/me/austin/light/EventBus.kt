@@ -127,21 +127,25 @@ class EventBus(private val recursive: Boolean = true) {
     /**
      * For dispatching events.
      *
-     * @see <a href="https://github.com/x4e/EventDispatcher/">cookiedragon event bus for my inspiration</a>.
+     * @see <a href="https://github.com/x4e/EventDispatcher/">cookiedragon event bus</a> for my inspiration.
      *
      * @param event Event to be posted to all registered actions.
      */
     fun post(event: Any) {
-        this.subscribers[event::class]?.forEach { handler ->
-            handler.callback(event)
+        this.subscribers[event::class]?.let { array ->
+            for (handler in array) {
+                handler.callback(event)
+            }
         }
 
         if (this.recursive) {
             var clazz: Class<*>? = event.javaClass.superclass
 
             while (clazz != null) {
-                this.subscribers[clazz.kotlin]?.forEach { handler ->
-                    handler.callback(event)
+                this.subscribers[clazz.kotlin]?.let { array ->
+                    for (handler in array) {
+                        handler.callback(event)
+                    }
                 }
                 clazz = clazz.superclass
             }
