@@ -4,7 +4,7 @@ import kotlin.math.pow
 
 class TimeTest {
     // To test new EventBus models
-    private fun bus_test(eventBus: EventBus) {
+    private fun bus_test(eventBus: ReflectionBus) {
         var end = 0
 
         val list = Array<Listener>(5_000) { i ->

@@ -1,23 +1,23 @@
 package me.austin.light
 
-import me.austin.light.EventBus.Handler
+import me.austin.rush.Listener
 import java.util.*
 import kotlin.reflect.KClass
 
 /**
  * Extremely lightweight event-bus made for kotlin use.
- * This does not contain any reflection, so you will either have to directly register lambda functions or instantiate a [Handler] object and then register that.
+ * This does not contain any reflection, so you will either have to directly register lambda functions or instantiate a [Listener] object and then register that.
  *
  * @author Austin
  * @since 2023
  *
  * @param recursive If the bus will also post superclasses of events posted.
  */
-class EventBus(private val recursive: Boolean = true) {
+class FastEventBus(private val recursive: Boolean = true) {
     /**
      * For all the classes of events and the lambdas which target them.
      */
-    private val subscribers = mutableMapOf<KClass<*>, Array<Handler<*>>>()
+    private val subscribers = mutableMapOf<KClass<*>, Array<Listener>>()
 
     /**
      * This is so we only ever have 1 write action going on at a time.
@@ -26,25 +26,25 @@ class EventBus(private val recursive: Boolean = true) {
     private val writeSync = Any()
 
     /**
-     * Adds a [Handler] to the registry with the [KClass] target explicitly stated.
+     * Adds a [Listener] to the registry with the [KClass] target explicitly stated.
      *
-     * @param type Type that the [Handler] will accept.
-     * @param handler The [Handler] to add to the [subscribers]
+     * @param type Type that the [Listener] will accept.
+     * @param listener The [Listener] to add to the [subscribers]
      */
-    fun <T : Any> subscribe(type: KClass<T>, handler: Handler<T>) {
+    fun <T : Any> subscribe(type: KClass<T>, listener: Listener) {
         synchronized(this.writeSync) {
             val array = this.subscribers[type]
 
             if (array == null) {
-                this.subscribers[type] = arrayOf(handler)
+                this.subscribers[type] = arrayOf(listener)
             } else {
-                if (handler in array) {
+                if (listener in array) {
                     return
                 }
 
-                val newArray = arrayOfNulls<Handler<T>>(array.size + 1)
+                val newArray = arrayOfNulls<Listener>(array.size + 1)
 
-                val index = Arrays.binarySearch(array, handler).let { i ->
+                val index = Arrays.binarySearch(array, listener).let { i ->
                     if (i < 0) {
                         -i - 1
                     } else {
@@ -53,23 +53,23 @@ class EventBus(private val recursive: Boolean = true) {
                 }
 
                 System.arraycopy(array, 0, newArray, 0, index)
-                newArray[index] = handler
+                newArray[index] = listener
                 System.arraycopy(array, index, newArray, index + 1, array.size - index)
 
                 @Suppress("UNCHECKED_CAST")
-                this.subscribers[type] = newArray as Array<Handler<*>>
+                this.subscribers[type] = newArray as Array<Listener>
             }
         }
     }
 
     /**
-     * Adds a [Handler] to the [subscribers].
+     * Adds a [Listener] to the [subscribers].
      *
      * @param T The type the lambda accepts.
-     * @param handler The handler to be added to the [subscribers].
+     * @param listener The handler to be added to the [subscribers].
      */
-    inline fun <reified T : Any> subscribe(handler: Handler<T>) {
-        this.subscribe(T::class, handler)
+    inline fun <reified T : Any> subscribe(listener: Listener) {
+        this.subscribe(T::class, listener)
     }
 
     /**
@@ -80,34 +80,46 @@ class EventBus(private val recursive: Boolean = true) {
      * @param action Lambda to add to the [subscribers].
      */
     inline fun <reified T : Any> subscribe(priority: Int = -50, noinline action: (T) -> Unit) {
-        this.subscribe(T::class, Handler(priority, action))
+        this.subscribe(T::class, object : Listener {
+            @Suppress("UNCHECKED_CAST")
+            private val action = action as (Any) -> Unit
+
+            override val target: KClass<*>
+                get() = T::class
+            override val priority: Int
+                get() = priority
+
+            override fun invoke(param: Any) {
+                action(param)
+            }
+        })
     }
 
     /**
-     * Removes a [Handler] from the [subscribers] with the [KClass] target specified.
+     * Removes a [Listener] from the [subscribers] with the [KClass] target specified.
      *
-     * @param type Type that the [Handler] will accept.
-     * @param handler The [Handler] to add to the [subscribers]
+     * @param type Type that the [Listener] will accept.
+     * @param listener The [Listener] to add to the [subscribers]
      */
-    fun <T : Any> unsubscribe(type: KClass<T>, handler: Handler<T>) {
+    fun <T : Any> unsubscribe(type: KClass<T>, listener: Listener) {
         synchronized(writeSync) {
             val array = this.subscribers[type]
 
             if (array != null) {
                 if (array.size > 1) {
-                    val index = array.indexOf(handler)
+                    val index = array.indexOf(listener)
 
                     if (index < 0) {
                         return
                     }
 
-                    val newArray = arrayOfNulls<Handler<T>>(array.size - 1)
+                    val newArray = arrayOfNulls<Listener>(array.size - 1)
 
                     System.arraycopy(array, 0, newArray, 0, index)
                     System.arraycopy(array, index + 1, newArray, index, array.size - index - 1)
 
                     @Suppress("UNCHECKED_CAST")
-                    this.subscribers[type] = newArray as Array<Handler<*>>
+                    this.subscribers[type] = newArray as Array<Listener>
                 } else {
                     this.subscribers.remove(type)
                 }
@@ -116,12 +128,12 @@ class EventBus(private val recursive: Boolean = true) {
     }
 
     /**
-     * Removes a [Handler] from the [subscribers].
+     * Removes a [Listener] from the [subscribers].
      *
-     * @param handler The handler to remove from the [subscribers].
+     * @param listener The handler to remove from the [subscribers].
      */
-    inline fun <reified T : Any> unsubscribe(handler: Handler<T>) {
-        this.unsubscribe(T::class, handler)
+    inline fun <reified T : Any> unsubscribe(listener: Listener) {
+        this.unsubscribe(T::class, listener)
     }
 
     /**
@@ -134,7 +146,7 @@ class EventBus(private val recursive: Boolean = true) {
     fun post(event: Any) {
         this.subscribers[event::class]?.let { array ->
             for (handler in array) {
-                handler.callback(event)
+                handler(event)
             }
         }
 
@@ -144,21 +156,11 @@ class EventBus(private val recursive: Boolean = true) {
             while (clazz != null) {
                 this.subscribers[clazz.kotlin]?.let { array ->
                     for (handler in array) {
-                        handler.callback(event)
+                        handler(event)
                     }
                 }
                 clazz = clazz.superclass
             }
-        }
-    }
-
-    class Handler<T>(private val priority: Int = -50, callback: (T) -> Unit) : Comparable<Handler<*>> {
-        // This is dumb, but it improves posting performance which is paramount.
-        @Suppress("UNCHECKED_CAST")
-        internal val callback = callback as (Any) -> Unit
-
-        override operator fun compareTo(other: Handler<*>): Int {
-            return -this.priority.compareTo(other.priority)
         }
     }
 }

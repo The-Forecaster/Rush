@@ -1,6 +1,6 @@
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import me.austin.light.EventBus
+import me.austin.light.FastEventBus
 import me.austin.rush.EventDispatcher
 import me.austin.rush.EventHandler
 import me.austin.rush.asyncListener
@@ -89,11 +89,11 @@ class KotlinTest {
 
     @Test
     fun test_lightweight() {
-        val handler = EventBus.Handler<String>(0) {
+        val handler = FastEventBus.Handler<String>(0) {
             println("$it with higher priority")
         }
 
-        with(EventBus(false)) {
+        with(FastEventBus(false)) {
             subscribe<String>(1) {
                 println("$it!")
             }

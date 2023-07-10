@@ -4,7 +4,7 @@ val coroutinesVersion: String by project
 plugins {
     java
     kotlin("jvm") version "1.9.0"
-    id("org.jetbrains.dokka") version "1.8.10"
+    id("org.jetbrains.dokka") version "1.8.20"
 }
 
 allprojects {
@@ -22,6 +22,10 @@ subprojects {
 
     dependencies {
         implementation(kotlin("stdlib", kotlinVersion))
+
+        implementation(project.rootProject)
+
+        compileOnly(group = "org.jetbrains", name = "annotations", version = "24.0.1")
     }
 
     java {
@@ -34,6 +38,20 @@ subprojects {
     }
 
     tasks {
+        jar {
+            into("META-INF") {
+                from("LICENSE")
+            }
+
+            manifest {
+                attributes(
+                    mapOf(
+                        "Automatic-Module-Name" to "me.austin.rush"
+                    ), "Rush"
+                )
+            }
+        }
+
         named<Jar>("javadocJar") {
             from(named("dokkaJavadoc"))
         }
@@ -54,6 +72,12 @@ dependencies {
     // Subprojects
     testImplementation(project(":eventbus"))
     testImplementation(project(":lightweight"))
+}
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(17))
+    }
 }
 
 kotlin {

@@ -4,13 +4,13 @@ import java.util.*
 import kotlin.reflect.KClass
 
 /**
- * Thread-safe implementation of [EventBus].
+ * Thread-safe implementation of [ReflectionBus].
  * This version is slower than [EventDispatcher] but is thread safe for multithreaded or non-blocking projects.
  *
  * @author Austin
  * @since 2022
  */
-open class ConcurrentEventDispatcher : EventBus {
+open class ConcurrentEventDispatcher : ReflectionBus {
     /**
      * Map that will be used to store registered [Listener] objects and their targets.
      *
@@ -53,6 +53,7 @@ open class ConcurrentEventDispatcher : EventBus {
 
                 val newArray = arrayOfNulls<Listener>(array.size + 1)
 
+                // Copy on write action
                 System.arraycopy(array, 0, newArray, 0, index)
                 newArray[index] = listener
                 System.arraycopy(array, index, newArray, index + 1, array.size - index)

@@ -4,14 +4,14 @@ import java.util.*
 import kotlin.reflect.KClass
 
 /**
- * Basic implementation of [EventBus].
+ * Basic implementation of [ReflectionBus].
  * This version is much faster than [ConcurrentEventDispatcher] but is not thread safe and can produce race conditions if running multithreaded or non-blocking projects.
  *
  * @author Austin
  * @since 2023
  *
  */
-open class EventDispatcher : EventBus {
+open class EventDispatcher : ReflectionBus {
     /**
      * Map that will be used to store registered [Listener] objects and their targets.
      *
