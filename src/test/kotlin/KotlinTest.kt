@@ -89,7 +89,7 @@ class KotlinTest {
 
     @Test
     fun test_lightweight() {
-        val handler = FastEventBus.Handler<String>(0) {
+        val handler = listener<String>(0) {
             println("$it with higher priority")
         }
 

@@ -1,5 +1,6 @@
 package me.austin.light
 
+import me.austin.rush.EventBus
 import me.austin.rush.Listener
 import java.util.*
 import kotlin.reflect.KClass
@@ -13,7 +14,7 @@ import kotlin.reflect.KClass
  *
  * @param recursive If the bus will also post superclasses of events posted.
  */
-class FastEventBus(private val recursive: Boolean = true) {
+class FastEventBus(private val recursive: Boolean = true) : EventBus {
     /**
      * For all the classes of events and the lambdas which target them.
      */
@@ -26,17 +27,16 @@ class FastEventBus(private val recursive: Boolean = true) {
     private val writeSync = Any()
 
     /**
-     * Adds a [Listener] to the registry with the [KClass] target explicitly stated.
+     * Adds a [Listener] to the [subscribers].
      *
-     * @param type Type that the [Listener] will accept.
-     * @param listener The [Listener] to add to the [subscribers]
+     * @param listener The handler to be added to the [subscribers].
      */
-    fun <T : Any> subscribe(type: KClass<T>, listener: Listener) {
+    override fun subscribe(listener: Listener) {
         synchronized(this.writeSync) {
-            val array = this.subscribers[type]
+            val array = this.subscribers[listener.target]
 
             if (array == null) {
-                this.subscribers[type] = arrayOf(listener)
+                this.subscribers[listener.target] = arrayOf(listener)
             } else {
                 if (listener in array) {
                     return
@@ -57,19 +57,9 @@ class FastEventBus(private val recursive: Boolean = true) {
                 System.arraycopy(array, index, newArray, index + 1, array.size - index)
 
                 @Suppress("UNCHECKED_CAST")
-                this.subscribers[type] = newArray as Array<Listener>
+                this.subscribers[listener.target] = newArray as Array<Listener>
             }
         }
-    }
-
-    /**
-     * Adds a [Listener] to the [subscribers].
-     *
-     * @param T The type the lambda accepts.
-     * @param listener The handler to be added to the [subscribers].
-     */
-    inline fun <reified T : Any> subscribe(listener: Listener) {
-        this.subscribe(T::class, listener)
     }
 
     /**
@@ -80,7 +70,7 @@ class FastEventBus(private val recursive: Boolean = true) {
      * @param action Lambda to add to the [subscribers].
      */
     inline fun <reified T : Any> subscribe(priority: Int = -50, noinline action: (T) -> Unit) {
-        this.subscribe(T::class, object : Listener {
+        this.subscribe(object : Listener {
             @Suppress("UNCHECKED_CAST")
             private val action = action as (Any) -> Unit
 
@@ -96,14 +86,13 @@ class FastEventBus(private val recursive: Boolean = true) {
     }
 
     /**
-     * Removes a [Listener] from the [subscribers] with the [KClass] target specified.
+     * Removes a [Listener] from the [subscribers].
      *
-     * @param type Type that the [Listener] will accept.
-     * @param listener The [Listener] to add to the [subscribers]
+     * @param listener The handler to remove from the [subscribers].
      */
-    fun <T : Any> unsubscribe(type: KClass<T>, listener: Listener) {
+    override fun unsubscribe(listener: Listener) {
         synchronized(writeSync) {
-            val array = this.subscribers[type]
+            val array = this.subscribers[listener.target]
 
             if (array != null) {
                 if (array.size > 1) {
@@ -119,21 +108,12 @@ class FastEventBus(private val recursive: Boolean = true) {
                     System.arraycopy(array, index + 1, newArray, index, array.size - index - 1)
 
                     @Suppress("UNCHECKED_CAST")
-                    this.subscribers[type] = newArray as Array<Listener>
+                    this.subscribers[listener.target] = newArray as Array<Listener>
                 } else {
-                    this.subscribers.remove(type)
+                    this.subscribers.remove(listener.target)
                 }
             }
         }
-    }
-
-    /**
-     * Removes a [Listener] from the [subscribers].
-     *
-     * @param listener The handler to remove from the [subscribers].
-     */
-    inline fun <reified T : Any> unsubscribe(listener: Listener) {
-        this.unsubscribe(T::class, listener)
     }
 
     /**
