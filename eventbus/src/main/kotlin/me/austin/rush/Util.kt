@@ -61,8 +61,7 @@ private inline val KClass<*>.listeners: Sequence<KCallable<Listener>>
     get() {
         @Suppress("UNCHECKED_CAST")
         return this.allMembers.filter { callable ->
-            callable.hasAnnotation<EventHandler>() && callable.returnType.withNullability(false)
-                .isSubtypeOf(typeOf<Listener>())
+            callable.hasAnnotation<EventHandler>() && callable.returnType.withNullability(false).isSubtypeOf(typeOf<Listener>())
         } as Sequence<KCallable<Listener>>
     }
 
@@ -73,9 +72,10 @@ private inline val KClass<*>.listeners: Sequence<KCallable<Listener>>
  */
 val Any.listenerArray: Array<Listener>
     get() {
-        val array = arrayOfNulls<Listener>(this::class.listeners.count())
+        val lists = this::class.listeners.toList()
+        val array = arrayOfNulls<Listener>(lists.size)
 
-        for ((index, listener) in this::class.listeners.withIndex()) {
+        for ((index, listener) in lists.withIndex()) {
             array[index] = listener.handleCall(this)
         }
 
