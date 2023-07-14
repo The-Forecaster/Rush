@@ -21,11 +21,14 @@ subprojects {
     }
 
     dependencies {
+        // Standard library
         implementation(kotlin("stdlib", kotlinVersion))
 
-        implementation(project.rootProject)
+        // Base project
+        implementation(project(":"))
 
-        compileOnly(group = "org.jetbrains", name = "annotations", version = "24.0.1")
+        // Annotations
+        implementation(group = "org.jetbrains", name = "annotations", version = "24.0.1")
     }
 
     java {

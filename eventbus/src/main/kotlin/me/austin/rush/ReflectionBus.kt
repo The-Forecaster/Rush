@@ -7,7 +7,6 @@ package me.austin.rush
  * @since 2022
  */
 interface ReflectionBus : EventBus {
-
     /**
      * Adds all [EventHandler] annotated [Listener] objects into the registry.
      *
@@ -44,11 +43,5 @@ interface ReflectionBus : EventBus {
         }
     }
 
-    /**
-     * Post an event to be processed by the subscribed methods or listener objects.
-     *
-     * @param T Event type.
-     * @param event Instance of [T] to post.
-     */
-    fun <T : Any> post(event: T)
+    fun <T : Any> postRecursive(event: T)
 }

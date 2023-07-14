@@ -1,10 +1,11 @@
 import me.austin.rush.*
 import org.junit.jupiter.api.Test
 import kotlin.math.pow
+import kotlin.test.assertEquals
 
 class TimeTest {
     // To test new EventBus models
-    private fun bus_test(eventBus: ReflectionBus) {
+    private fun bus_test(eventBus: EventBus): Long {
         var end = 0
 
         val list = Array<Listener>(5_000) { i ->
@@ -36,17 +37,14 @@ class TimeTest {
             }
         }
 
+        assertEquals(end, 12497500)
         println("End: $end")
-        println("Test took ${System.currentTimeMillis() - start}ms.")
+        return System.currentTimeMillis() - start
     }
 
     @Test
-    fun regular_test() {
-        bus_test(EventDispatcher())
-    }
-
-    @Test
-    fun concurrent_test() {
-        bus_test(ConcurrentEventDispatcher())
+    fun test() {
+        println("EventDispatcher took ${bus_test(EventDispatcher())}ms")
+        println("ConcurrentEventDispatcher took ${bus_test(ConcurrentEventDispatcher())}ms")
     }
 }

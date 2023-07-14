@@ -2,6 +2,7 @@ package me.austin.rush
 
 import java.util.*
 import kotlin.reflect.KClass
+import kotlin.reflect.full.allSuperclasses
 
 /**
  * Basic implementation of [ReflectionBus].
@@ -75,6 +76,22 @@ open class EventDispatcher : ReflectionBus {
         this.subscribers[event::class]?.let { list ->
             for (listener in list) {
                 listener(event)
+            }
+        }
+    }
+
+    override fun <T : Any> postRecursive(event: T) {
+        this.subscribers[event::class]?.let { list ->
+            for (listener in list) {
+                listener(event)
+            }
+        }
+
+        for (kClass in event::class.allSuperclasses) {
+            this.subscribers[kClass]?.let { list ->
+                for (listener in list) {
+                    listener(event)
+                }
             }
         }
     }

@@ -1,7 +1,9 @@
 package me.austin.rush
 
 import java.util.*
+import kotlin.collections.AbstractMap
 import kotlin.reflect.KClass
+import kotlin.reflect.full.allSuperclasses
 
 /**
  * Thread-safe implementation of [ReflectionBus].
@@ -134,5 +136,21 @@ open class ConcurrentEventDispatcher : ReflectionBus {
         }
 
         return event
+    }
+
+    override fun <T : Any> postRecursive(event: T) {
+        this.subscribers[event::class]?.let { array ->
+            for (listener in array) {
+                listener(event)
+            }
+        }
+
+        for (kClass in event::class.allSuperclasses) {
+            this.subscribers[kClass]?.let { array ->
+                for (listener in array) {
+                    listener(event)
+                }
+            }
+        }
     }
 }

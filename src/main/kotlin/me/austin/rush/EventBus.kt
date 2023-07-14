@@ -60,4 +60,12 @@ interface EventBus {
             this.unsubscribe(listener)
         }
     }
+
+    /**
+     * Post an event to be processed by the subscribed methods or listener objects.
+     *
+     * @param T Event type.
+     * @param event Instance of [T] to post.
+     */
+    fun <T : Any> post(event: T)
 }
