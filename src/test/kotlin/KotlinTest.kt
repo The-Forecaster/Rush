@@ -1,6 +1,5 @@
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import me.austin.light.FastEventBus
 import me.austin.rush.EventDispatcher
 import me.austin.rush.EventHandler
 import me.austin.rush.asyncListener
@@ -84,27 +83,6 @@ class KotlinTest {
             runBlocking {
                 delay(200)
             }
-        }
-    }
-
-    @Test
-    fun test_lightweight() {
-        val handler = listener<String>(0) {
-            println("$it with higher priority")
-        }
-
-        with(FastEventBus(false)) {
-            subscribe<String>(1) {
-                println("$it!")
-            }
-
-            subscribe(handler)
-
-            post("I just posted an event")
-
-            unsubscribe(handler)
-
-            post("I just posted another event")
         }
     }
 }
