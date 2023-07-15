@@ -72,9 +72,13 @@ dependencies {
     // We need this for the rubBlocking function
     testImplementation(group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version = coroutinesVersion)
 
-    // Subprojects
-    testImplementation(project(":eventbus"))
-    testImplementation(project(":lightweight"))
+    // Reflection library
+    implementation(group = "org.jetbrains.kotlin", name = "kotlin-reflect", version = kotlinVersion) {
+        exclude(group = "org.jetbrains.kotlin", module = "kotlin-stdlib")
+    }
+
+    // Coroutine library
+    implementation(group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version = coroutinesVersion)
 }
 
 java {
