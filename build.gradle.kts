@@ -7,59 +7,8 @@ plugins {
     id("org.jetbrains.dokka") version "1.8.20"
 }
 
-allprojects {
-    group = "me.austin"
-    version = "0.2.3"
-}
-
-subprojects {
-    apply(plugin = "kotlin")
-    apply(plugin = "org.jetbrains.dokka")
-
-    repositories {
-        mavenCentral()
-    }
-
-    dependencies {
-        // Standard library
-        implementation(kotlin("stdlib", kotlinVersion))
-
-        // Base project
-        implementation(project(":"))
-
-        // Annotations
-        implementation(group = "org.jetbrains", name = "annotations", version = "24.0.1")
-    }
-
-    java {
-        withSourcesJar()
-        withJavadocJar()
-    }
-
-    kotlin {
-        jvmToolchain(17)
-    }
-
-    tasks {
-        jar {
-            into("META-INF") {
-                from("LICENSE")
-            }
-
-            manifest {
-                attributes(
-                    mapOf(
-                        "Automatic-Module-Name" to "me.austin.rush"
-                    ), "Rush"
-                )
-            }
-        }
-
-        named<Jar>("javadocJar") {
-            from(named("dokkaJavadoc"))
-        }
-    }
-}
+group = "me.austin"
+version = "0.2.3"
 
 repositories {
     mavenCentral()
@@ -79,9 +28,18 @@ dependencies {
 
     // Coroutine library
     implementation(group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version = coroutinesVersion)
+
+    // Standard library
+    implementation(kotlin("stdlib", kotlinVersion))
+
+    // Annotations
+    implementation(group = "org.jetbrains", name = "annotations", version = "24.0.1")
 }
 
 java {
+    withSourcesJar()
+    withJavadocJar()
+
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(17))
     }
@@ -95,5 +53,23 @@ tasks {
     test {
         testLogging.showStandardStreams = true
         useJUnitPlatform()
+    }
+
+    jar {
+        into("META-INF") {
+            from("LICENSE")
+        }
+
+        manifest {
+            attributes(
+                mapOf(
+                    "Automatic-Module-Name" to "me.austin.rush"
+                ), "Rush"
+            )
+        }
+    }
+
+    named<Jar>("javadocJar") {
+        from(named("dokkaJavadoc"))
     }
 }

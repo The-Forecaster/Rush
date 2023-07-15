@@ -18,6 +18,7 @@ import kotlin.reflect.KClass
 class LambdaListener @PublishedApi internal constructor(
     override val target: KClass<*>, override val priority: Int, action: (Nothing) -> Unit
 ) : Listener {
+
     // So we can avoid using generics
     @Suppress("UNCHECKED_CAST")
     private val action = action as (Any) -> Unit
