@@ -93,7 +93,7 @@ open class ConcurrentEventBus : ReflectionEventBus {
     }
 
     override fun subscribe(subscriber: Any) {
-        for (listener in this.cache.getOrDefault(subscriber, subscriber.listenerArray)) {
+        for (listener in this.cache.getOrPut(subscriber) { subscriber.listenerArray }) {
             this.subscribe(listener)
         }
     }

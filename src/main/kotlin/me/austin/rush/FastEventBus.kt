@@ -38,20 +38,18 @@ open class FastEventBus : ReflectionEventBus {
                 return
             }
 
-            val index = Collections.binarySearch(list, listener).let { i ->
+            list.add(Collections.binarySearch(list, listener).let { i ->
                 if (i < 0) {
                     -i - 1
                 } else {
                     i
                 }
-            }
-
-            list.add(index, listener)
+            }, listener)
         }
     }
 
     override fun subscribe(subscriber: Any) {
-        for (listener in this.cache.getOrDefault(subscriber, subscriber.listenerList)) {
+        for (listener in this.cache.getOrPut(subscriber) { subscriber.listenerList }) {
             this.subscribe(listener)
         }
     }
