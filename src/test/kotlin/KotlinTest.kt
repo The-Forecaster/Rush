@@ -1,6 +1,6 @@
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
-import me.austin.rush.EventDispatcher
+import me.austin.rush.FastEventBus
 import me.austin.rush.EventHandler
 import me.austin.rush.asyncListener
 import me.austin.rush.listener
@@ -35,7 +35,7 @@ class KotlinTest {
 
         val list = listener<String> { println("$it!") }
 
-        with(EventDispatcher()) {
+        with(FastEventBus()) {
             subscribeAll(list, async)
 
             subscribe(KotlinTest())
@@ -65,7 +65,7 @@ class KotlinTest {
 
         val list = listener<String> { println("$it!") }
 
-        with(EventDispatcher()) {
+        with(FastEventBus()) {
             subscribeAll(list, async)
 
             subscribe(KotlinTest())

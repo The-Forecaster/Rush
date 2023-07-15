@@ -44,7 +44,7 @@ class TimeTest {
 
     @Test
     fun test() {
-        println("EventDispatcher took ${bus_test(EventDispatcher())}ms")
-        println("ConcurrentEventDispatcher took ${bus_test(ConcurrentEventDispatcher())}ms")
+        println("EventDispatcher took ${bus_test(FastEventBus())}ms")
+        println("ConcurrentEventDispatcher took ${bus_test(ConcurrentEventBus())}ms")
     }
 }

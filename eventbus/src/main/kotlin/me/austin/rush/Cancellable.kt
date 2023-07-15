@@ -6,13 +6,13 @@ package me.austin.rush
  * @author Austin
  * @since 2022
  */
-abstract class Cancellable {
+interface Cancellable {
     /**
      * If the event has been cancelled or not.
      *
      * If an event is cancelled then it will not be posted to listeners after it has been cancelled.
      */
-    abstract var isCancelled: Boolean
+    var isCancelled: Boolean
 
     /**
      * Use this function to set isCancelled to true.

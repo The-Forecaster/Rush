@@ -1,5 +1,11 @@
 package me.austin.rush
 
+/**
+ * Basic structure for an event dispatcher.
+ *
+ * @author Austin
+ * @since 2022
+ */
 interface EventBus {
     /**
      * Adds the listener into the registry.

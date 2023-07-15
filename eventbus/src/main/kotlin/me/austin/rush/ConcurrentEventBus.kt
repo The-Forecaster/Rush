@@ -1,18 +1,17 @@
 package me.austin.rush
 
 import java.util.*
-import kotlin.collections.AbstractMap
 import kotlin.reflect.KClass
 import kotlin.reflect.full.allSuperclasses
 
 /**
- * Thread-safe implementation of [ReflectionBus].
- * This version is slower than [EventDispatcher] but is thread safe for multithreaded or non-blocking projects.
+ * Thread-safe implementation of [ReflectionEventBus].
+ * This version is slower than [FastEventBus] but is thread safe for multithreaded or non-blocking projects.
  *
  * @author Austin
  * @since 2022
  */
-open class ConcurrentEventDispatcher : ReflectionBus {
+open class ConcurrentEventBus : ReflectionEventBus {
     /**
      * Map that will be used to store registered [Listener] objects and their targets.
      *

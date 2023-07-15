@@ -7,7 +7,7 @@ import kotlin.reflect.jvm.isAccessible
 import kotlin.reflect.typeOf
 
 /**
- * Annotate a [Listener] with this class to mark it for adding to the [ReflectionBus].
+ * Annotate a [Listener] with this class to mark it for adding to the [ReflectionEventBus].
  *
  * @author Austin
  * @since 2022

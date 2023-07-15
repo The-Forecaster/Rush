@@ -5,14 +5,14 @@ import kotlin.reflect.KClass
 import kotlin.reflect.full.allSuperclasses
 
 /**
- * Basic implementation of [ReflectionBus].
- * This version is much faster than [ConcurrentEventDispatcher] but is not thread safe and can produce race conditions if running multithreaded or non-blocking projects.
+ * Basic implementation of [ReflectionEventBus].
+ * This version is much faster than [ConcurrentEventBus] but is not thread safe and can produce race conditions if running multithreaded or non-blocking projects.
  *
  * @author Austin
  * @since 2023
  *
  */
-open class EventDispatcher : ReflectionBus {
+open class FastEventBus : ReflectionEventBus {
     /**
      * Map that will be used to store registered [Listener] objects and their targets.
      *

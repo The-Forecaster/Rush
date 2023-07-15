@@ -1,12 +1,12 @@
 package me.austin.rush
 
 /**
- * Basic structure for an event dispatcher.
+ * Event Bus that uses reflection.
  *
  * @author Austin
  * @since 2022
  */
-interface ReflectionBus : EventBus {
+interface ReflectionEventBus : EventBus {
     /**
      * Adds all [EventHandler] annotated [Listener] objects into the registry.
      *
@@ -43,5 +43,8 @@ interface ReflectionBus : EventBus {
         }
     }
 
+    /**
+     * Posts an event and all it's superclasses to all registered listeners
+     */
     fun <T : Any> postRecursive(event: T)
 }
