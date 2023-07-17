@@ -4,6 +4,12 @@ import java.util.*
 import kotlin.reflect.KClass
 
 class LightEventBus : EventBus {
+    /**
+     * Map that will be used to store registered [Listener] objects and their targets.
+     *
+     * The key-set will hold all stored [KClass] targets of [Listener] objects.
+     * The value-set will hold the [MutableList] of [Listener] objects corresponding to their respective targets.
+     */
     private val subscribers = mutableMapOf<KClass<*>, MutableList<Listener>>()
 
     override fun subscribe(listener: Listener) {

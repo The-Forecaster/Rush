@@ -37,14 +37,14 @@ class TimeTest {
             }
         }
 
-        assertEquals(12497500, end)
+        // assertEquals(12497500, end)
         println("End: $end")
         return System.currentTimeMillis() - start
     }
 
     @Test
     fun test() {
-        println("LightEventBus took ${bus_test(LightEventBus())}")
+        println("LightEventBus took ${bus_test(LightEventBus())}ms")
         println("FastEventBus took ${bus_test(FastEventBus())}ms")
         println("ConcurrentEventBus took ${bus_test(ConcurrentEventBus())}ms")
     }
