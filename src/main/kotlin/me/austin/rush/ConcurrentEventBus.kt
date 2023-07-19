@@ -1,7 +1,5 @@
 package me.austin.rush
 
-import java.util.*
-import java.util.concurrent.ConcurrentHashMap
 import kotlin.reflect.KClass
 import kotlin.reflect.full.allSuperclasses
 
@@ -45,7 +43,8 @@ open class ConcurrentEventBus : ReflectionEventBus {
                     return
                 }
 
-                val index = Arrays.binarySearch(array, listener).let { i ->
+                val index = array.binarySearch(listener).let { i ->
+                    // This slows this down considerably, but is needed or else binarySearch will provide an incorrect index
                     if (i < 0) {
                         -i - 1
                     } else {
@@ -55,7 +54,7 @@ open class ConcurrentEventBus : ReflectionEventBus {
 
                 val newArray = arrayOfNulls<Listener>(array.size + 1)
 
-                // Copy on write action
+                // Copy on write action (thanks for the code Brady)
                 System.arraycopy(array, 0, newArray, 0, index)
                 newArray[index] = listener
                 System.arraycopy(array, index, newArray, index + 1, array.size - index)
@@ -68,6 +67,29 @@ open class ConcurrentEventBus : ReflectionEventBus {
 
     override fun unsubscribe(listener: Listener) {
         synchronized(writeSync) {
+            this.subscribers[listener.target]?.let { array ->
+                val index = array.indexOf(listener)
+
+                // If listener isn't found then index will be -1
+                if (index < 0) {
+                    return
+                }
+
+                if (array.size == 1) {
+                    // This is slow but will improve posting performance with fewer keys to iterate through
+                    this.subscribers.remove(listener.target)
+                } else {
+                    val newArray = arrayOfNulls<Listener>(array.size - 1)
+
+                    // Copy around the listener
+                    System.arraycopy(array, 0, newArray, 0, index)
+                    System.arraycopy(array, index + 1, newArray, index, array.size - index - 1)
+
+                    @Suppress("UNCHECKED_CAST")
+                    this.subscribers[listener.target] = newArray as Array<Listener>
+                }
+            }
+
             val array = this.subscribers[listener.target]
 
             if (array != null) {
