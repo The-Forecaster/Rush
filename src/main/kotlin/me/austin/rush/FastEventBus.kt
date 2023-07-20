@@ -78,22 +78,6 @@ open class FastEventBus : ReflectionEventBus {
         }
     }
 
-    override fun <T : Any> postRecursive(event: T) {
-        this.subscribers[event::class]?.let { list ->
-            for (listener in list) {
-                listener(event)
-            }
-        }
-
-        for (kClass in event::class.allSuperclasses) {
-            this.subscribers[kClass]?.let { list ->
-                for (listener in list) {
-                    listener(event)
-                }
-            }
-        }
-    }
-
     /**
      * Dispatches an event that is cancellable.
      * When the event is cancelled it will not be posted to any listeners after.
@@ -114,5 +98,21 @@ open class FastEventBus : ReflectionEventBus {
         }
 
         return event
+    }
+
+    override fun <T : Any> postRecursive(event: T) {
+        this.subscribers[event::class]?.let { list ->
+            for (listener in list) {
+                listener(event)
+            }
+        }
+
+        for (kClass in event::class.allSuperclasses) {
+            this.subscribers[kClass]?.let { list ->
+                for (listener in list) {
+                    listener(event)
+                }
+            }
+        }
     }
 }
