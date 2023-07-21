@@ -33,7 +33,7 @@ dependencies {
     implementation(kotlin("stdlib", kotlinVersion))
 
     // Annotations
-    implementation(group = "org.jetbrains", name = "annotations", version = "24.0.1")
+    compileOnly(group = "org.jetbrains", name = "annotations", version = "24.0.1")
 }
 
 java {
@@ -58,14 +58,6 @@ tasks {
     jar {
         into("META-INF") {
             from("LICENSE")
-        }
-
-        manifest {
-            attributes(
-                mapOf(
-                    "Automatic-Module-Name" to "me.austin.rush"
-                ), "Rush"
-            )
         }
     }
 
