@@ -22,7 +22,7 @@ class LightEventBus : EventBus {
                 return
             }
 
-            list.add(Collections.binarySearch(list, listener).let { i ->
+            list.add(list.binarySearch(listener).let { i ->
                 if (i < 0) {
                     -i - 1
                 } else {

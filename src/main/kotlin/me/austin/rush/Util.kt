@@ -26,7 +26,7 @@ annotation class EventHandler
 private val KClass<*>.allMembers: Sequence<KCallable<*>>
     get() {
         // asSequence just creates a wrapper for better filter and map actions, so it's better to do it this way
-        return (this.declaredMembers + this.allSuperclasses.flatMap { kClass -> kClass.declaredMembers }).asSequence()
+        return (this.declaredMembers + this.allSuperclasses.flatMap<KClass<*>, KCallable<*>> { kClass -> kClass.declaredMembers }).asSequence<KCallable<*>>()
     }
 
 /**
@@ -59,8 +59,8 @@ private fun <R> KCallable<R>.handleCall(receiver: Any): R {
  */
 private inline val KClass<*>.listeners: Sequence<KCallable<Listener>>
     get() {
-        @Suppress("UNCHECKED_CAST")
-        return this.allMembers.filter { kCallable ->
+        @Suppress("UNCHECKED_CAST") // Should never throw an error
+        return this.allMembers.filter<KCallable<*>> { kCallable ->
             kCallable.hasAnnotation<EventHandler>() && kCallable.returnType.withNullability(false).isSubtypeOf(typeOf<Listener>())
         } as Sequence<KCallable<Listener>>
     }
@@ -72,11 +72,11 @@ private inline val KClass<*>.listeners: Sequence<KCallable<Listener>>
  */
 internal val Any.listenerArray: Array<Listener>
     get() {
-        val listeners = this::class.listeners.toList()
+        val listeners = this::class.listeners.toList<KCallable<Listener>>()
         val array = arrayOfNulls<Listener>(listeners.size)
 
-        for ((index, listener) in listeners.withIndex()) {
-            array[index] = listener.handleCall(this)
+        for ((index, listener) in listeners.withIndex<KCallable<Listener>>()) {
+            array[index] = listener.handleCall<Listener>(this)
         }
 
         @Suppress("UNCHECKED_CAST")
@@ -90,5 +90,5 @@ internal val Any.listenerArray: Array<Listener>
  */
 internal val Any.listenerList: List<Listener>
     get() {
-        return this::class.listeners.map { kCallable -> kCallable.handleCall(this) }.toList()
+        return this::class.listeners.map<KCallable<Listener>, Listener> { kCallable -> kCallable.handleCall<Listener>(this) }.toList<Listener>()
     }

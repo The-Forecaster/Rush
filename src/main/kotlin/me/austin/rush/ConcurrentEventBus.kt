@@ -29,12 +29,11 @@ open class ConcurrentEventBus : ReflectionEventBus {
     /**
      * This is so we only ever have 1 write action going on at a time.
      */
-    // Need to make sure this won't double lock, more tests coming in the future
-    private val writeSync = Any()
+    private val writeSync = Any() // Need to make sure this won't double lock, more tests coming in the future
 
     override fun subscribe(listener: Listener) {
         synchronized(writeSync) {
-            val array = this.subscribers[listener.target]
+            val array = this.subscribers[listener.target] // Can't use ?.let because it will capture subscribers in a closure
 
             if (array == null) {
                 this.subscribers[listener.target] = arrayOf(listener)
@@ -43,8 +42,7 @@ open class ConcurrentEventBus : ReflectionEventBus {
                     return
                 }
 
-                val index = array.binarySearch(listener).let { i ->
-                    // This slows this down considerably, but is needed or else binarySearch will provide an incorrect index
+                val index = array.binarySearch(listener).let { i -> // This is slow but is needed to prevent an error
                     if (i < 0) {
                         -i - 1
                     } else {
@@ -67,29 +65,6 @@ open class ConcurrentEventBus : ReflectionEventBus {
 
     override fun unsubscribe(listener: Listener) {
         synchronized(writeSync) {
-            this.subscribers[listener.target]?.let { array ->
-                val index = array.indexOf(listener)
-
-                // If listener isn't found then index will be -1
-                if (index < 0) {
-                    return
-                }
-
-                if (array.size == 1) {
-                    // This is slow but will improve posting performance with fewer keys to iterate through
-                    this.subscribers.remove(listener.target)
-                } else {
-                    val newArray = arrayOfNulls<Listener>(array.size - 1)
-
-                    // Copy around the listener
-                    System.arraycopy(array, 0, newArray, 0, index)
-                    System.arraycopy(array, index + 1, newArray, index, array.size - index - 1)
-
-                    @Suppress("UNCHECKED_CAST")
-                    this.subscribers[listener.target] = newArray as Array<Listener>
-                }
-            }
-
             val array = this.subscribers[listener.target]
 
             if (array != null) {
@@ -104,9 +79,8 @@ open class ConcurrentEventBus : ReflectionEventBus {
                 } else {
                     val newArray = arrayOfNulls<Listener>(array.size - 1)
 
-                    // Copy around the listener
-                    System.arraycopy(array, 0, newArray, 0, index)
-                    System.arraycopy(array, index + 1, newArray, index, array.size - index - 1)
+                    System.arraycopy(array, 0, newArray, 0, index) // Copy up to the listener
+                    System.arraycopy(array, index + 1, newArray, index, array.size - index - 1) // Copy after the listener
 
                     @Suppress("UNCHECKED_CAST")
                     this.subscribers[listener.target] = newArray as Array<Listener>

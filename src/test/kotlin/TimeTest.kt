@@ -5,10 +5,10 @@ import kotlin.test.assertEquals
 
 var end = 0
 
-class Container(private val i: Int) {
+data class Container(private val i: Int) {
     @EventHandler
     val listener = listener<Int>(i % 42) { int ->
-        end += (-1.0f).pow(i).toInt() * i.toFloat().pow(int).toInt() * int.toFloat().pow(i).toInt()
+        end += (-1.0f).pow(i).toInt() * (-1.0f).pow(int).toInt() * int
     }
 }
 
@@ -102,7 +102,7 @@ class TimeTest {
         dem = System.currentTimeMillis()
 
         for (i in 0..1_000) {
-            eventBus.post(i / 2)
+            eventBus.post(i)
         }
 
         println("Second post took ${System.currentTimeMillis() - dem}ms")

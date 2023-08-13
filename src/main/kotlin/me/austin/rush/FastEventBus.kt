@@ -1,6 +1,5 @@
 package me.austin.rush
 
-import java.util.*
 import kotlin.reflect.KClass
 import kotlin.reflect.full.allSuperclasses
 
@@ -38,7 +37,7 @@ open class FastEventBus : ReflectionEventBus {
                 return
             }
 
-            list.add(Collections.binarySearch(list, listener).let { i ->
+            list.add(list.binarySearch(listener).let { i ->
                 if (i < 0) {
                     -i - 1
                 } else {
