@@ -104,12 +104,14 @@ open class ConcurrentEventBus : ReflectionEventBus {
         }
     }
 
-    override fun <T : Any> post(event: T) {
+    override fun <T : Any> post(event: T): T {
         this.subscribers[event::class]?.let { array ->
             for (listener in array) {
                 listener(event)
             }
         }
+
+        return event
     }
 
     /**

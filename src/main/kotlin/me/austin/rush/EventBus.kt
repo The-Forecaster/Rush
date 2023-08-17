@@ -73,5 +73,5 @@ interface EventBus {
      * @param T Event type.
      * @param event Instance of [T] to post.
      */
-    fun <T : Any> post(event: T)
+    fun <T : Any> post(event: T): T
 }

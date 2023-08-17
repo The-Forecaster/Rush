@@ -18,9 +18,7 @@ import kotlin.reflect.KClass
 class LambdaListener @PublishedApi internal constructor(
     override val target: KClass<*>, override val priority: Int, action: (Nothing) -> Unit
 ) : Listener {
-
-    // So we can avoid using generics
-    @Suppress("UNCHECKED_CAST")
+    @Suppress("UNCHECKED_CAST") // So we can avoid using generics
     private val action = action as (Any) -> Unit
 
     override operator fun invoke(param: Any) {
@@ -75,8 +73,7 @@ class AsyncListener @PublishedApi internal constructor(
     private val scope: CoroutineScope,
     action: suspend (Nothing) -> Unit
 ) : Listener {
-    // So we can avoid using generics
-    @Suppress("UNCHECKED_CAST")
+    @Suppress("UNCHECKED_CAST") // So we can avoid using generics
     private val action = action as suspend (Any) -> Unit
 
     override operator fun invoke(param: Any) {

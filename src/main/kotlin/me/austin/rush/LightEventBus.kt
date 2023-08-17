@@ -2,6 +2,13 @@ package me.austin.rush
 
 import kotlin.reflect.KClass
 
+/**
+ * Default implementation of [EventBus]. This bus does not provide reflection, so you will have to subscribe each [Listener]
+ * individually instead of being able to scan for [Listener] fields within a class.
+ *
+ * @author Austin
+ * @since 2023
+ */
 class LightEventBus : EventBus {
     /**
      * Map that will be used to store registered [Listener] objects and their targets.
@@ -39,11 +46,13 @@ class LightEventBus : EventBus {
         }
     }
 
-    override fun <T : Any> post(event: T) {
+    override fun <T : Any> post(event: T): T {
         this.subscribers[event::class]?.let { list ->
             for (listener in list) {
                 listener(event)
             }
         }
+
+        return event
     }
 }

@@ -9,7 +9,6 @@ import kotlin.reflect.full.allSuperclasses
  *
  * @author Austin
  * @since 2023
- *
  */
 open class FastEventBus : ReflectionEventBus {
     /**
@@ -69,12 +68,14 @@ open class FastEventBus : ReflectionEventBus {
         }
     }
 
-    override fun <T : Any> post(event: T) {
+    override fun <T : Any> post(event: T): T {
         this.subscribers[event::class]?.let { list ->
             for (listener in list) {
                 listener(event)
             }
         }
+
+        return event
     }
 
     /**

@@ -42,13 +42,12 @@ private val KClass<*>.allMembers: Sequence<KCallable<*>>
 private fun <R> KCallable<R>.handleCall(receiver: Any): R {
     val accessible = this.isAccessible
     this.isAccessible = true
-    // Doing this so we don't leak accessibility
     return try {
         this.call(receiver)
     } catch (e: Throwable) {
         this.call()
     } finally {
-        this.isAccessible = accessible
+        this.isAccessible = accessible // Doing this so we don't leak accessibility
     }
 }
 
@@ -73,14 +72,23 @@ private inline val KClass<*>.listeners: Sequence<KCallable<Listener>>
 internal val Any.listenerArray: Array<Listener>
     get() {
         val listeners = this::class.listeners.toList()
-        val array = arrayOfNulls<Listener>(listeners.size)
 
-        for ((index, listener) in listeners.withIndex()) {
-            array[index] = listener.handleCall(this)
+        return when (listeners.size) {
+            0 -> arrayOf()
+
+            1 -> arrayOf(listeners[0].handleCall(this))
+
+            else -> {
+                val array = arrayOfNulls<Listener>(listeners.size)
+
+                for ((index, listener) in listeners.withIndex()) {
+                    array[index] = listener.handleCall(this)
+                }
+
+                @Suppress("UNCHECKED_CAST")
+                array as Array<Listener>
+            }
         }
-
-        @Suppress("UNCHECKED_CAST")
-        return array as Array<Listener>
     }
 
 /**
