@@ -57,7 +57,7 @@ open class ConcurrentEventBus : ReflectionEventBus {
                 newArray[index] = listener
                 System.arraycopy(array, index, newArray, index + 1, array.size - index)
 
-                @Suppress("UNCHECKED_CAST")
+                @Suppress("UNCHECKED_CAST") // Should never error
                 this.subscribers[listener.target] = newArray as Array<Listener>
             }
         }
@@ -82,7 +82,7 @@ open class ConcurrentEventBus : ReflectionEventBus {
                     System.arraycopy(array, 0, newArray, 0, index) // Copy up to the listener
                     System.arraycopy(array, index + 1, newArray, index, array.size - index - 1) // Copy after the listener
 
-                    @Suppress("UNCHECKED_CAST")
+                    @Suppress("UNCHECKED_CAST") // Should never error
                     this.subscribers[listener.target] = newArray as Array<Listener>
                 }
             }

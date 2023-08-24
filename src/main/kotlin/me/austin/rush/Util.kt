@@ -47,7 +47,7 @@ private fun <R> KCallable<R>.handleCall(receiver: Any): R {
     } catch (e: Throwable) {
         this.call()
     } finally {
-        this.isAccessible = accessible // Doing this so we don't leak accessibility
+        this.isAccessible = accessible // So we don't leak accessibility
     }
 }
 
