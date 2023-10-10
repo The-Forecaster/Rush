@@ -1,7 +1,6 @@
 import me.austin.rush.*
 import org.junit.jupiter.api.Test
 import kotlin.math.pow
-import kotlin.test.assertEquals
 
 var end = 0
 
@@ -17,6 +16,8 @@ class TimeTest {
     private fun bus_test(eventBus: EventBus) {
         end = 0
 
+        listenerArray
+
         val list = Array<Listener>(5_000) { i ->
             listener<Int>(i % -35) { int ->
                 end += i * (-1.0f).pow(int).toInt()
@@ -29,32 +30,32 @@ class TimeTest {
             }
         }
 
-        val start = System.currentTimeMillis()
+        var time = System.currentTimeMillis()
 
         eventBus.subscribeAll(*list)
         eventBus.subscribeAll(*otherList)
 
-        println("Subscription took ${System.currentTimeMillis() - start}ms")
-        var dem = System.currentTimeMillis()
+        println("Subscription took ${System.currentTimeMillis() - time}ms")
+        time = System.currentTimeMillis()
 
         for (i in 0..1_000) {
             eventBus.post(i)
         }
 
-        println("First post took ${System.currentTimeMillis() - dem}ms")
-        dem = System.currentTimeMillis()
+        println("First post took ${System.currentTimeMillis() - time}ms")
+        time = System.currentTimeMillis()
 
         eventBus.unsubscribeAll(*list)
 
-        println("Unsubscribe took ${System.currentTimeMillis() - dem}ms")
-        dem = System.currentTimeMillis()
+        println("Unsubscribe took ${System.currentTimeMillis() - time}ms")
+        time = System.currentTimeMillis()
 
         for (i in 0..1_000) {
             eventBus.post(i / 2)
         }
 
-        println("Second post took ${System.currentTimeMillis() - dem}ms")
-        println("Test took ${System.currentTimeMillis() - start}ms")
+        println("Second post took ${System.currentTimeMillis() - time}ms")
+        println("Test took ${System.currentTimeMillis() - time}ms")
 
         // assertEquals(124750, end)
         println("End: $end")
