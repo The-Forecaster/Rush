@@ -1,5 +1,6 @@
 package me.austin.rush
 
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.reflect.KClass
 
 /**
@@ -21,8 +22,8 @@ open class LightEventBus : EventBus {
     override fun subscribe(listener: Listener) {
         val list = this.subscribers[listener.target]
 
-        if (list == null) {
-            this.subscribers[listener.target] = mutableListOf(listener)
+        if (list == null) { // ?.let because it will capture subscribers in a closure, this will avoid that
+            this.subscribers[listener.target] = CopyOnWriteArrayList(arrayOf(listener))
         } else {
             if (listener in list) {
                 return
@@ -40,7 +41,9 @@ open class LightEventBus : EventBus {
 
     override fun unsubscribe(listener: Listener) {
         this.subscribers[listener.target]?.let { list ->
-            if (list.remove(listener) && list.isEmpty()) {
+            list.remove(listener)
+
+            if (list.isEmpty()) {
                 this.subscribers.remove(listener.target)
             }
         }
@@ -50,6 +53,20 @@ open class LightEventBus : EventBus {
         this.subscribers[event::class]?.let { list ->
             for (listener in list) {
                 listener(event)
+            }
+        }
+
+        return event
+    }
+
+    override fun <T : Cancellable> post(event: T): T {
+        this.subscribers[event::class]?.let { array ->
+            for (listener in array) {
+                listener(event)
+
+                if (event.isCancelled) {
+                    break
+                }
             }
         }
 

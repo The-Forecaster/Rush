@@ -7,7 +7,7 @@ import kotlin.reflect.jvm.isAccessible
 import kotlin.reflect.typeOf
 
 /**
- * Annotate a [Listener] with this class to mark it for adding to the [ReflectionEventBus].
+ * Annotate a [Listener] with this class to mark it for adding to a [ReflectionEventBus].
  *
  * @author Austin
  * @since 2022
@@ -25,6 +25,7 @@ annotation class EventHandler
  */
 private val KClass<*>.allMembers: Sequence<KCallable<*>>
     get() {
+        // Returns all fields, public or otherwise, in this class and all superclasses of it
         // asSequence just creates a wrapper for better filter and map actions, so it's better to do it this way
         return (this.declaredMembers + this.allSuperclasses.flatMap { kClass -> kClass.declaredMembers }).asSequence()
     }
@@ -40,14 +41,14 @@ private val KClass<*>.allMembers: Sequence<KCallable<*>>
  * @return The [R] referenced by the [KCallable].
  */
 private fun <R> KCallable<R>.handleCall(receiver: Any): R {
-    val accessible = this.isAccessible
-    this.isAccessible = true
+    val accessible = this.isAccessible // Store accessibility
+    this.isAccessible = true // Change accessibility
     return try {
-        this.call(receiver)
-    } catch (e: Throwable) {
-        this.call()
+        this.call(receiver) // If field is non-static
+    } catch (e: IllegalArgumentException) {
+        this.call() // If field is static
     } finally {
-        this.isAccessible = accessible // So we don't leak accessibility
+        this.isAccessible = accessible // Reset accessibility
     }
 }
 
@@ -60,7 +61,9 @@ private inline val KClass<*>.listeners: Sequence<KCallable<Listener>>
     get() {
         @Suppress("UNCHECKED_CAST") // Should never throw an error
         return this.allMembers.filter { kCallable ->
-            kCallable.hasAnnotation<EventHandler>() && kCallable.returnType.withNullability(false).isSubtypeOf(typeOf<Listener>())
+            // Check if it has the annotation and check if the return type is a listener
+            kCallable.hasAnnotation<EventHandler>() && kCallable.returnType.withNullability(false)
+                .isSubtypeOf(typeOf<Listener>())
         } as Sequence<KCallable<Listener>>
     }
 
@@ -71,22 +74,19 @@ private inline val KClass<*>.listeners: Sequence<KCallable<Listener>>
  */
 internal val Any.listenerArray: Array<Listener>
     get() {
-        val listeners = this::class.listeners.toList()
+        val listeners = this::class.listeners.toList() // So we can index and access list.size
 
         return when (listeners.size) {
-            0 -> arrayOf()
+            0 -> arrayOf() // No listeners
 
-            1 -> arrayOf(listeners[0].handleCall(this))
+            1 -> arrayOf(listeners[0].handleCall(this)) // 1 Listener
 
-            else -> {
-                val array = arrayOfNulls<Listener>(listeners.size)
+            2 -> arrayOf(listeners[0].handleCall(this), listeners[1].handleCall(this)) // 2 Listeners
 
-                for ((index, listener) in listeners.withIndex()) {
-                    array[index] = listener.handleCall(this)
+            else -> { // More than 2 Listeners, could be optimized
+                Array(listeners.size) { index ->
+                    listeners[index].handleCall(this)
                 }
-
-                @Suppress("UNCHECKED_CAST")
-                array as Array<Listener>
             }
         }
     }

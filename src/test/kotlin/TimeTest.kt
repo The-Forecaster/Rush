@@ -1,13 +1,14 @@
 import me.austin.rush.*
 import org.junit.jupiter.api.Test
 import kotlin.math.pow
+import kotlin.math.sqrt
 
 var end = 0
 
 data class Container(private val i: Int) {
     @EventHandler
     val listener = listener<Int>(i % 42) { int ->
-        end += (-1.0f).pow(i).toInt() * (-1.0f).pow(int).toInt() * int
+        end += sqrt((-1.0f).pow(i)).toInt() * sqrt((-1.0f).pow(int)).toInt() * int
     }
 }
 
@@ -16,45 +17,43 @@ class TimeTest {
     private fun bus_test(eventBus: EventBus) {
         end = 0
 
-        listenerArray
-
         val list = Array<Listener>(5_000) { i ->
             listener<Int>(i % -35) { int ->
-                end += i * (-1.0f).pow(int).toInt()
+                end += sqrt(i / (-1.0f).pow(int)).toInt()
             }
         }
 
         val otherList = Array<Listener>(5_000) { i ->
             listener<Int>(i % -86) { int ->
-                end += int * (-1.0f).pow(i).toInt()
+                end += sqrt(int / (-1.0f).pow(i)).toInt()
             }
         }
 
-        var time = System.currentTimeMillis()
+        val time = System.currentTimeMillis()
 
         eventBus.subscribeAll(*list)
         eventBus.subscribeAll(*otherList)
 
         println("Subscription took ${System.currentTimeMillis() - time}ms")
-        time = System.currentTimeMillis()
+        var dem = System.currentTimeMillis()
 
         for (i in 0..1_000) {
             eventBus.post(i)
         }
 
-        println("First post took ${System.currentTimeMillis() - time}ms")
-        time = System.currentTimeMillis()
+        println("First post took ${System.currentTimeMillis() - dem}ms")
+        dem = System.currentTimeMillis()
 
         eventBus.unsubscribeAll(*list)
 
-        println("Unsubscribe took ${System.currentTimeMillis() - time}ms")
-        time = System.currentTimeMillis()
+        println("Unsubscribe took ${System.currentTimeMillis() - dem}ms")
+        dem = System.currentTimeMillis()
 
         for (i in 0..1_000) {
             eventBus.post(i / 2)
         }
 
-        println("Second post took ${System.currentTimeMillis() - time}ms")
+        println("Second post took ${System.currentTimeMillis() - dem}ms")
         println("Test took ${System.currentTimeMillis() - time}ms")
 
         // assertEquals(124750, end)
@@ -76,7 +75,7 @@ class TimeTest {
             }
         }
 
-        val objList = Array(500) { i ->
+        val objList = Array(2_000) { i ->
             Container(i)
         }
 

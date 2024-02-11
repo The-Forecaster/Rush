@@ -74,4 +74,14 @@ interface EventBus {
      * @param event Instance of [T] to post.
      */
     fun <T : Any> post(event: T): T
+
+    /**
+     * Dispatches an event that is cancellable.
+     * When the event is cancelled it will not be posted to any listeners after.
+     *
+     * @param T The type of the [event] posted.
+     * @param event The event which will be posted.
+     * @return [event].
+     */
+    fun <T : Cancellable> post(event: T): T
 }

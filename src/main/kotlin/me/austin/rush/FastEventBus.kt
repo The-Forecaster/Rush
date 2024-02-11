@@ -1,6 +1,5 @@
 package me.austin.rush
 
-import kotlin.reflect.KClass
 import kotlin.reflect.full.allSuperclasses
 
 /**
@@ -17,7 +16,7 @@ open class FastEventBus : LightEventBus(), ReflectionEventBus {
      *
      * The Key set stores an [Object] and the value set holds a [List] of [Listener] fields in that object.
      */
-    protected val cache = mutableMapOf<Any, List<Listener>>()
+    private val cache = mutableMapOf<Any, List<Listener>>()
 
     override fun subscribe(subscriber: Any) {
         for (listener in this.cache.getOrPut(subscriber) { subscriber.listenerList }) {
@@ -27,32 +26,10 @@ open class FastEventBus : LightEventBus(), ReflectionEventBus {
 
     override fun unsubscribe(subscriber: Any) {
         this.cache[subscriber]?.let { list ->
-            for (listener in list) {
+            for (listener in list) { // If subscriber isn't in the cache then it hasn't been registered, so we don't need to unregister it
                 this.unsubscribe(listener)
             }
         }
-    }
-
-    /**
-     * Dispatches an event that is cancellable.
-     * When the event is cancelled it will not be posted to any listeners after.
-     *
-     * @param T The type of the [event] posted.
-     * @param event The event which will be posted.
-     * @return [event].
-     */
-    open fun <T : Cancellable> post(event: T): T {
-        this.subscribers[event::class]?.let { list ->
-            for (listener in list) {
-                listener(event)
-
-                if (event.isCancelled) {
-                    break
-                }
-            }
-        }
-
-        return event
     }
 
     override fun <T : Any> postRecursive(event: T) {

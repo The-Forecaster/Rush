@@ -33,32 +33,32 @@ open class ConcurrentEventBus : ReflectionEventBus {
 
     override fun subscribe(listener: Listener) {
         synchronized(writeSync) {
-            val array = this.subscribers[listener.target] // Can't use ?.let because it will capture subscribers in a closure
+            val array = this.subscribers[listener.target]
 
-            if (array == null) {
+            if (array == null) { // ?.let because it will capture subscribers in a closure, this will avoid that
                 this.subscribers[listener.target] = arrayOf(listener)
             } else {
                 if (listener in array) {
                     return
                 }
 
-                val index = array.binarySearch(listener).let { i -> // This is slow but is needed to prevent an error
+                val index = array.binarySearch(listener).let { i -> // This will return negative values sometimes
                     if (i < 0) {
-                        -i - 1
+                        -i - 1 // Invert the value to prevent crashes
                     } else {
                         i
                     }
                 }
 
-                val newArray = arrayOfNulls<Listener>(array.size + 1)
+                val dst = arrayOfNulls<Listener>(array.size + 1)
 
                 // Copy on write action (thanks for the code Brady)
-                System.arraycopy(array, 0, newArray, 0, index)
-                newArray[index] = listener
-                System.arraycopy(array, index, newArray, index + 1, array.size - index)
+                System.arraycopy(array, 0, dst, 0, index)
+                dst[index] = listener
+                System.arraycopy(array, index, dst, index + 1, array.size - index)
 
                 @Suppress("UNCHECKED_CAST") // Should never error
-                this.subscribers[listener.target] = newArray as Array<Listener>
+                this.subscribers[listener.target] = dst as Array<Listener>
             }
         }
     }
@@ -67,7 +67,7 @@ open class ConcurrentEventBus : ReflectionEventBus {
         synchronized(writeSync) {
             val array = this.subscribers[listener.target]
 
-            if (array != null) {
+            if (array != null) { // ?.let because it will capture subscribers in a closure, this will avoid that
                 val index = array.indexOf(listener)
 
                 if (index < 0) {
@@ -77,13 +77,13 @@ open class ConcurrentEventBus : ReflectionEventBus {
                 if (array.size == 1) {
                     this.subscribers.remove(listener.target)
                 } else {
-                    val newArray = arrayOfNulls<Listener>(array.size - 1)
+                    val dst = arrayOfNulls<Listener>(array.size - 1)
 
-                    System.arraycopy(array, 0, newArray, 0, index) // Copy up to the listener
-                    System.arraycopy(array, index + 1, newArray, index, array.size - index - 1) // Copy after the listener
+                    System.arraycopy(array, 0, dst, 0, index) // Copy up to the listener
+                    System.arraycopy(array, index + 1, dst, index, array.size - index - 1) // Copy after
 
                     @Suppress("UNCHECKED_CAST") // Should never error
-                    this.subscribers[listener.target] = newArray as Array<Listener>
+                    this.subscribers[listener.target] = dst as Array<Listener>
                 }
             }
         }
@@ -96,8 +96,7 @@ open class ConcurrentEventBus : ReflectionEventBus {
     }
 
     override fun unsubscribe(subscriber: Any) {
-        // If subscriber isn't in the cache then it hasn't been registered, so we don't need to unregister it
-        this.cache[subscriber]?.let { array ->
+        this.cache[subscriber]?.let { array -> // If subscriber isn't in the cache then it hasn't been registered, so we don't need to unregister it
             for (listener in array) {
                 this.unsubscribe(listener)
             }
@@ -114,15 +113,7 @@ open class ConcurrentEventBus : ReflectionEventBus {
         return event
     }
 
-    /**
-     * Dispatches an event that is cancellable.
-     * When the event is cancelled it will not be posted to any listeners after.
-     *
-     * @param T The type of the [event] posted.
-     * @param event The event which will be posted.
-     * @return [event].
-     */
-    open fun <T : Cancellable> post(event: T): T {
+    override fun <T : Cancellable> post(event: T): T {
         this.subscribers[event::class]?.let { array ->
             for (listener in array) {
                 listener(event)

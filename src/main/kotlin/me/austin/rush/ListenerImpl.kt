@@ -37,7 +37,7 @@ class LambdaListener @PublishedApi internal constructor(
  */
 inline fun <reified T : Any> listener(
     priority: Int = -50, noinline action: (T) -> Unit
-): LambdaListener {
+): Listener {
     return LambdaListener(T::class, priority, action)
 }
 
@@ -53,7 +53,7 @@ inline fun <reified T : Any> listener(
 @JvmOverloads
 fun <T : Any> listener(
     target: Class<T>, priority: Int = -50, action: Consumer<T>
-): LambdaListener {
+): Listener {
     return LambdaListener(target.kotlin, priority, action::accept)
 }
 
@@ -97,6 +97,6 @@ inline fun <reified T : Any> asyncListener(
     priority: Int = -50,
     scope: CoroutineScope = CoroutineScope(Dispatchers.Default),
     noinline action: suspend (T) -> Unit
-): AsyncListener {
+): Listener {
     return AsyncListener(T::class, priority, scope, action)
 }
