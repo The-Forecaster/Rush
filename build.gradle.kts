@@ -5,6 +5,7 @@ plugins {
     java
     kotlin("jvm") version "1.9.10"
     id("org.jetbrains.dokka") version "1.9.0"
+    `maven-publish`
 }
 
 group = "me.austin"
@@ -63,5 +64,17 @@ tasks {
 
     named<Jar>("javadocJar") {
         from(named("dokkaJavadoc"))
+    }
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            groupId = "me.austin"
+            artifactId = "rush"
+            version = "0.2.3"
+
+            from(components["java"])
+        }
     }
 }
