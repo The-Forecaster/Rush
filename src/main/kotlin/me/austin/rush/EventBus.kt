@@ -68,7 +68,7 @@ interface EventBus {
     }
 
     /**
-     * Post an event to be processed by the subscribed methods or listener objects.
+     * Post an event to be processed by the listener objects.
      *
      * @param T Event type.
      * @param event Instance of [T] to post.

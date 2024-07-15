@@ -10,14 +10,14 @@ interface ReflectionEventBus : EventBus {
     /**
      * Adds all [EventHandler] annotated [Listener] objects into the registry.
      *
-     * @param subscriber Object you want to be searched for listeners to be added to the registry.
+     * @param subscriber Object you want to be scanned.
      */
     fun subscribe(subscriber: Any)
 
     /**
      * Adds all objects and their contained [EventHandler] annotated [Listener] objects to the registry.
      *
-     * @param subscribers All objects you want to be added to the registry.
+     * @param subscribers All objects you want to be scanned.
      */
     fun subscribeAll(vararg subscribers: Any) {
         for (subscriber in subscribers) {
@@ -28,7 +28,7 @@ interface ReflectionEventBus : EventBus {
     /**
      * Removes all [EventHandler] annotated [Listener] objects from the registry.
      *
-     * @param subscriber Event subscriber instance.
+     * @param subscriber Object you want removed from the registry.
      */
     fun unsubscribe(subscriber: Any)
 

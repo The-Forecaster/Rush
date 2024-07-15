@@ -12,9 +12,9 @@ import kotlin.reflect.full.allSuperclasses
  */
 open class FastEventBus : LightEventBus(), ReflectionEventBus {
     /**
-     * Map that is used to reduce the amount of reflection calls we have to make.
+     * Map that is used to reduce the amount of reflection calls made.
      *
-     * The Key set stores an [Object] and the value set holds a [List] of [Listener] fields in that object.
+     * The key set stores an [Object] and the value set holds a [List] of [Listener] fields in that object.
      */
     private val cache = mutableMapOf<Any, List<Listener>>()
 
