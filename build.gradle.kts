@@ -3,8 +3,8 @@ val coroutinesVersion: String by project
 
 plugins {
     java
-    kotlin("jvm") version "1.9.10"
-    id("org.jetbrains.dokka") version "1.9.0"
+    kotlin("jvm") version "2.1.20"
+    id("org.jetbrains.dokka") version "1.9.20"
 }
 
 group = "me.austin"
@@ -18,7 +18,7 @@ dependencies {
     // Test library
     testImplementation(kotlin("test", kotlinVersion))
 
-    // We need this for the rubBlocking function
+    // We need this for the runBlocking function
     testImplementation(group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version = coroutinesVersion)
 
     // Reflection library
@@ -41,12 +41,12 @@ java {
     withJavadocJar()
 
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(17))
+        languageVersion.set(JavaLanguageVersion.of(21))
     }
 }
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(21)
 }
 
 tasks {
